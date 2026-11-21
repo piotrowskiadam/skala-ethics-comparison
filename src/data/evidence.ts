@@ -115,9 +115,9 @@ export const SOURCES: Record<string, ScientificSource> = {
     shortBadge: 'Poore & Nemecek 2018',
     citation:
       'Poore, J., & Nemecek, T. (2018). Reducing food’s environmental impacts through producers and consumers. Science, 360(6392), 987–992.',
-    institution: 'University of Oxford / Science',
+    institution: 'University of Oxford / Science (PubMed)',
     year: 2018,
-    url: 'https://doi.org/10.1126/science.aaq0216',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/29853680/',
     scope: 'Metaanaliza 38 700 gospodarstw: CO₂e, zużycie wody i zajętość gleby dla żywności.',
   },
   'scarborough-2023': {
@@ -127,7 +127,7 @@ export const SOURCES: Record<string, ScientificSource> = {
       'Scarborough, P. et al. (2023). Vegans, vegetarians, fish-eaters and meat-eaters in the UK show discrepant environmental impacts. Nature Food, 4, 565–574.',
     institution: 'University of Oxford / Nature Food',
     year: 2023,
-    url: 'https://doi.org/10.1038/s43016-023-00795-w',
+    url: 'https://www.nature.com/articles/s43016-023-00795-w',
     scope: 'Porównanie rzeczywistych diet 55 504 osób pod kątem emisji, wody, gleby i bioróżnorodności.',
   },
   'defra-2024': {
@@ -147,7 +147,7 @@ export const SOURCES: Record<string, ScientificSource> = {
       'Smart Freight Centre (2023). Global Logistics Emissions Council (GLEC) Framework v3.0 (ISO 14083 aligned).',
     institution: 'Smart Freight Centre',
     year: 2023,
-    url: 'https://www.smartfreightcentre.org/en/how-to-implement-items/what-is-glec-framework/',
+    url: 'https://smartfreightcentre.org/',
     scope: 'Międzynarodowy standard liczenia emisji łańcuchów dostaw (air freight vs sea freight vs road).',
   },
   'epoch-ai-2025': {
@@ -185,9 +185,9 @@ export const SOURCES: Record<string, ScientificSource> = {
     shortBadge: 'Water Footprint Net.',
     citation:
       'Mekonnen, M. M., & Hoekstra, A. Y. (2011). The green, blue and grey water footprint of crops and derived crop products. HESS, 15, 1577–1600.',
-    institution: 'Water Footprint Network / Univ. of Twente',
+    institution: 'Water Footprint Network / HESS',
     year: 2011,
-    url: 'https://doi.org/10.5194/hess-15-1577-2011',
+    url: 'https://hess.copernicus.org/articles/15/1577/2011/',
     scope: 'Bazowy ślad wodny bawełny, pasz zwierzęcych, wołowiny i produktów rolnych.',
   },
   'kobize-2024': {
@@ -197,7 +197,7 @@ export const SOURCES: Record<string, ScientificSource> = {
       'KOBiZE / IOŚ-PIB (2024). Wskaźniki emisyjności CO₂ dla energii elektrycznej w Polsce (~597 g CO₂/kWh).',
     institution: 'Krajowy Ośrodek Bilansowania i Zarządzania Emisjami',
     year: 2024,
-    url: 'https://www.kobize.pl/pl/article/aktualnosci-2024/id/2530/wskazniki-emisyjnosci-dla-energii-elektrycznej-za-2023-r',
+    url: 'https://www.kobize.pl/',
     scope: 'Oficjalny wskaźnik emisyjności polskiego miksu elektroenergetycznego.',
   },
   'eea-2024': {
