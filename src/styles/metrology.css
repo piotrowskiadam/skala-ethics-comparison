@@ -369,6 +369,40 @@ input {
   border-radius: 4px;
 }
 
+.pan-weight-blocks {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 15px;
+}
+
+.weight-block {
+  display: inline-block;
+  width: 14px;
+  height: 9px;
+  border-radius: 1.5px;
+  background-color: var(--copper);
+  border: 1px solid var(--ink);
+}
+
+.weight-block.is-frac {
+  background-color: #c97b57;
+}
+
+.weight-block.is-ref {
+  width: 22px;
+  height: 10px;
+  background-color: var(--ink);
+}
+
+.weight-block-more {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--copper);
+  margin-left: 2px;
+}
+
 .pan-select {
   background-color: transparent;
   border: none;

@@ -58,6 +58,132 @@ function formatMultiplier(factor: number): string {
   });
 }
 
+function renderMobilePanWeights(
+  multiplier: number,
+  isCounterActive: boolean,
+  isHeavier: boolean,
+) {
+  // Single reference weight when not counterweighted or on the 1x side
+  if (!isCounterActive || multiplier <= 1.05) {
+    const isHeavyRef = isCounterActive || isHeavier;
+    return (
+      <g>
+        <rect
+          x={isHeavyRef ? -14 : -8}
+          y={isHeavyRef ? 21 : 27}
+          width={isHeavyRef ? 28 : 16}
+          height={isHeavyRef ? 13 : 7}
+          rx="1.5"
+          fill={isHeavyRef ? '#A44B27' : '#3F4441'}
+          stroke="#141615"
+          strokeWidth="0.7"
+        />
+      </g>
+    );
+  }
+
+  // Counterweighted side: draw exact full blocks + fractional block (up to 12 blocks),
+  // or a dense 12-block stack + "+N" badge for huge ratios (e.g. 32,6x or 1 733x)
+  const fullCount = Math.floor(multiplier);
+  const frac = multiplier - fullCount;
+  const maxVisible = 12;
+  const capped = fullCount >= maxVisible;
+  const visibleFull = capped ? maxVisible : fullCount;
+  const showFrac = !capped && frac >= 0.08;
+
+  const blockW = 10.5;
+  const blockH = 6.5;
+  const gapX = 2.2;
+  const gapY = 2;
+  const cols = 4;
+
+  const items: { w: number; isFrac: boolean }[] = [];
+  for (let i = 0; i < visibleFull; i++) {
+    items.push({ w: blockW, isFrac: false });
+  }
+  if (showFrac) {
+    items.push({ w: Math.max(3, blockW * frac), isFrac: true });
+  }
+
+  const rows: { w: number; isFrac: boolean }[][] = [];
+  for (let i = 0; i < items.length; i += cols) {
+    rows.push(items.slice(i, i + cols));
+  }
+
+  return (
+    <g>
+      {rows.map((row, rowIdx) => {
+        const totalRowW =
+          row.reduce((sum, b) => sum + b.w, 0) + (row.length - 1) * gapX;
+        let curX = -totalRowW / 2;
+        const y = 34 - (rowIdx + 1) * blockH - rowIdx * gapY - 0.5;
+        return row.map((block, colIdx) => {
+          const x = curX;
+          curX += block.w + gapX;
+          return (
+            <rect
+              key={`${rowIdx}-${colIdx}`}
+              x={x}
+              y={y}
+              width={block.w}
+              height={blockH}
+              rx="1.2"
+              fill={block.isFrac ? '#C97B57' : '#A44B27'}
+              stroke="#141615"
+              strokeWidth="0.65"
+            />
+          );
+        });
+      })}
+      {capped && (
+        <text
+          x="0"
+          y={34 - rows.length * (blockH + gapY) - 4}
+          textAnchor="middle"
+          fontFamily="JetBrains Mono, monospace"
+          fontSize="7.5"
+          fontWeight="700"
+          fill="#A44B27"
+        >
+          ×{formatMultiplier(multiplier)}
+        </text>
+      )}
+    </g>
+  );
+}
+
+function renderDesktopWeightStrip(multiplier: number) {
+  const fullCount = Math.floor(multiplier);
+  const frac = multiplier - fullCount;
+  const maxVisible = 10;
+  const capped = fullCount >= maxVisible;
+  const visibleFull = capped ? maxVisible : fullCount;
+  const showFrac = !capped && frac >= 0.08;
+
+  return (
+    <div
+      className="pan-weight-blocks"
+      aria-label={`Wizualizacja ${formatMultiplier(multiplier)} odważników`}
+    >
+      {Array.from({ length: visibleFull }, (_, i) => (
+        <span key={i} className="weight-block" />
+      ))}
+      {showFrac && (
+        <span
+          className="weight-block is-frac"
+          style={{ width: `${Math.max(4, Math.round(14 * frac))}px` }}
+          title={`+${frac.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} szt.`}
+        />
+      )}
+      {capped && (
+        <span className="weight-block-more mono">
+          +{Math.round(multiplier - maxVisible).toLocaleString('pl-PL')}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
   leftItem,
   rightItem,
@@ -369,9 +495,18 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 {formatMetricValue(animLeftVal, activeMetric)}
               </div>
               <div className="pan-secondary-metrics tabular">
-                {leftMultiplier > 1
-                  ? `1 szt.: ${formatMetricValue(rawLeftVal, activeMetric)}`
-                  : getSecondarySummary(leftItem, activeMetric)}
+                {leftMultiplier > 1 ? (
+                  renderDesktopWeightStrip(leftMultiplier)
+                ) : counterActive ? (
+                  <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
+                    <span className="weight-block is-ref" />
+                    <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
+                      1× wzorzec
+                    </span>
+                  </div>
+                ) : (
+                  getSecondarySummary(leftItem, activeMetric)
+                )}
               </div>
               <a
                 href={leftSource.url}
@@ -442,9 +577,18 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 {formatMetricValue(animRightVal, activeMetric)}
               </div>
               <div className="pan-secondary-metrics tabular">
-                {rightMultiplier > 1
-                  ? `1 szt.: ${formatMetricValue(rawRightVal, activeMetric)}`
-                  : getSecondarySummary(rightItem, activeMetric)}
+                {rightMultiplier > 1 ? (
+                  renderDesktopWeightStrip(rightMultiplier)
+                ) : counterActive ? (
+                  <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
+                    <span className="weight-block is-ref" />
+                    <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
+                      1× wzorzec
+                    </span>
+                  </div>
+                ) : (
+                  getSecondarySummary(rightItem, activeMetric)
+                )}
               </div>
               <a
                 href={rightSource.url}
@@ -596,20 +740,15 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-24" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="24" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <rect
-              x={!counterActive && ratio.heavier === 'left' ? -15 : -8}
-              y={!counterActive && ratio.heavier === 'left' ? 20 : 27}
-              width={!counterActive && ratio.heavier === 'left' ? 30 : 16}
-              height={!counterActive && ratio.heavier === 'left' ? 14 : 7}
-              rx="1.5"
-              fill={
-                counterActive || ratio.heavier === 'left' ? '#A44B27' : '#3F4441'
-              }
-            />
+            <line x1="0" y1="5" x2="-28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            <line x1="0" y1="5" x2="28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            {renderMobilePanWeights(
+              leftMultiplier,
+              counterActive,
+              ratio.heavier === 'left',
+            )}
             <path
-              d="M -30 34 Q 0 46 30 34 Z"
+              d="M -32 34 Q 0 46 32 34 Z"
               fill={!counterActive && ratio.heavier === 'left' ? '#141615' : '#ECEAE3'}
               stroke="#141615"
               strokeWidth="1.4"
@@ -625,20 +764,15 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-24" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="24" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <rect
-              x={!counterActive && ratio.heavier === 'right' ? -15 : -8}
-              y={!counterActive && ratio.heavier === 'right' ? 20 : 27}
-              width={!counterActive && ratio.heavier === 'right' ? 30 : 16}
-              height={!counterActive && ratio.heavier === 'right' ? 14 : 7}
-              rx="1.5"
-              fill={
-                counterActive || ratio.heavier === 'right' ? '#A44B27' : '#3F4441'
-              }
-            />
+            <line x1="0" y1="5" x2="-28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            <line x1="0" y1="5" x2="28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            {renderMobilePanWeights(
+              rightMultiplier,
+              counterActive,
+              ratio.heavier === 'right',
+            )}
             <path
-              d="M -30 34 Q 0 46 30 34 Z"
+              d="M -32 34 Q 0 46 32 34 Z"
               fill={!counterActive && ratio.heavier === 'right' ? '#141615' : '#ECEAE3'}
               stroke="#141615"
               strokeWidth="1.4"
@@ -712,8 +846,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             className={`pan-foreign-card mobile-pan-card ${
               !counterActive && ratio.heavier === 'left'
                 ? 'heavier is-lower'
-                : counterActive
+                : counterActive && leftMultiplier > 1
                 ? 'counterweighted'
+                : counterActive
+                ? 'heavier'
                 : 'is-higher'
             }`}
           >
@@ -756,8 +892,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             className={`pan-foreign-card mobile-pan-card ${
               !counterActive && ratio.heavier === 'right'
                 ? 'heavier is-lower'
-                : counterActive
+                : counterActive && rightMultiplier > 1
                 ? 'counterweighted'
+                : counterActive
+                ? 'heavier'
                 : 'is-higher'
             }`}
           >
