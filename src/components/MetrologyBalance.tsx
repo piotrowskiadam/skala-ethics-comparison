@@ -13,6 +13,7 @@ import {
   formatRatio,
 } from '../data/evidence';
 import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
+import { TrueScaleWeightChamber } from './TrueScaleWeightChamber';
 
 interface MetrologyBalanceProps {
   leftItem: DecisionItem;
@@ -58,10 +59,38 @@ function formatMultiplier(factor: number): string {
   });
 }
 
+function getMobilePanStackGeometry(multiplier: number, isCounterActive: boolean) {
+  if (!isCounterActive || multiplier <= 1.05) {
+    return { wireDrop: 34, rows: 1, blockW: 10.5, blockH: 6.5, gapX: 2.2, gapY: 2, cols: 4 };
+  }
+  const fullCount = Math.floor(multiplier);
+  const hasFrac = multiplier - fullCount >= 0.08;
+  const total = fullCount + (hasFrac ? 1 : 0);
+
+  // Show ALL blocks directly on the SVG pan up to 40 blocks (e.g. 4.7x, 13.6x, 32.6x),
+  // dynamically extending the suspension wires so blocks NEVER collide with the beam/hook!
+  if (total <= 40) {
+    const cols = total <= 12 ? 4 : total <= 24 ? 5 : 6;
+    const blockW = cols === 4 ? 10.5 : cols === 5 ? 8.6 : 7.2;
+    const blockH = cols === 4 ? 6.2 : cols === 5 ? 5.2 : 4.5;
+    const gapX = cols === 4 ? 2 : 1.6;
+    const gapY = 1.6;
+    const rows = Math.ceil(total / cols);
+    const stackH = rows * blockH + (rows - 1) * gapY;
+    const wireDrop = Math.max(34, Math.ceil(stackH + 18));
+    return { wireDrop, rows, blockW, blockH, gapX, gapY, cols };
+  }
+
+  // For >40 blocks, the full 1:1 stack renders in TrueScaleWeightChamber below;
+  // on the mini SVG pan dish, render a clean dense 6x4 tower with tall clear wires
+  return { wireDrop: 58, rows: 4, blockW: 7.2, blockH: 4.5, gapX: 1.6, gapY: 1.6, cols: 6 };
+}
+
 function renderMobilePanWeights(
   multiplier: number,
   isCounterActive: boolean,
   isHeavier: boolean,
+  wireDrop: number,
 ) {
   // Single reference weight when not counterweighted or on the 1x side
   if (!isCounterActive || multiplier <= 1.05) {
@@ -70,7 +99,7 @@ function renderMobilePanWeights(
       <g>
         <rect
           x={isHeavyRef ? -14 : -8}
-          y={isHeavyRef ? 21 : 27}
+          y={isHeavyRef ? wireDrop - 13 : wireDrop - 7}
           width={isHeavyRef ? 28 : 16}
           height={isHeavyRef ? 13 : 7}
           rx="1.5"
@@ -82,55 +111,48 @@ function renderMobilePanWeights(
     );
   }
 
-  // Counterweighted side: draw exact full blocks + fractional block (up to 12 blocks),
-  // or a dense 12-block stack + "+N" badge for huge ratios (e.g. 32,6x or 1 733x)
+  const geom = getMobilePanStackGeometry(multiplier, isCounterActive);
   const fullCount = Math.floor(multiplier);
   const frac = multiplier - fullCount;
-  const maxVisible = 12;
-  const capped = fullCount >= maxVisible;
-  const visibleFull = capped ? maxVisible : fullCount;
+  const maxOnPan = 40;
+  const capped = fullCount > maxOnPan;
+  const visibleFull = capped ? 24 : fullCount;
   const showFrac = !capped && frac >= 0.08;
-
-  const blockW = 10.5;
-  const blockH = 6.5;
-  const gapX = 2.2;
-  const gapY = 2;
-  const cols = 4;
 
   const items: { w: number; isFrac: boolean }[] = [];
   for (let i = 0; i < visibleFull; i++) {
-    items.push({ w: blockW, isFrac: false });
+    items.push({ w: geom.blockW, isFrac: false });
   }
   if (showFrac) {
-    items.push({ w: Math.max(3, blockW * frac), isFrac: true });
+    items.push({ w: Math.max(2.8, geom.blockW * frac), isFrac: true });
   }
 
   const rows: { w: number; isFrac: boolean }[][] = [];
-  for (let i = 0; i < items.length; i += cols) {
-    rows.push(items.slice(i, i + cols));
+  for (let i = 0; i < items.length; i += geom.cols) {
+    rows.push(items.slice(i, i + geom.cols));
   }
 
   return (
     <g>
       {rows.map((row, rowIdx) => {
         const totalRowW =
-          row.reduce((sum, b) => sum + b.w, 0) + (row.length - 1) * gapX;
+          row.reduce((sum, b) => sum + b.w, 0) + (row.length - 1) * geom.gapX;
         let curX = -totalRowW / 2;
-        const y = 34 - (rowIdx + 1) * blockH - rowIdx * gapY - 0.5;
+        const y = wireDrop - (rowIdx + 1) * geom.blockH - rowIdx * geom.gapY - 0.5;
         return row.map((block, colIdx) => {
           const x = curX;
-          curX += block.w + gapX;
+          curX += block.w + geom.gapX;
           return (
             <rect
               key={`${rowIdx}-${colIdx}`}
               x={x}
               y={y}
               width={block.w}
-              height={blockH}
-              rx="1.2"
+              height={geom.blockH}
+              rx="1.1"
               fill={block.isFrac ? '#C97B57' : '#A44B27'}
               stroke="#141615"
-              strokeWidth="0.65"
+              strokeWidth="0.6"
             />
           );
         });
@@ -138,14 +160,14 @@ function renderMobilePanWeights(
       {capped && (
         <text
           x="0"
-          y={34 - rows.length * (blockH + gapY) - 4}
+          y={wireDrop - rows.length * (geom.blockH + geom.gapY) - 4}
           textAnchor="middle"
           fontFamily="JetBrains Mono, monospace"
-          fontSize="7.5"
+          fontSize="7.2"
           fontWeight="700"
           fill="#A44B27"
         >
-          ×{formatMultiplier(multiplier)}
+          ×{formatMultiplier(multiplier)} ↓
         </text>
       )}
     </g>
@@ -347,6 +369,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
         ))}
       </optgroup>
     ));
+
+  const mobileMaxMult = Math.max(leftMultiplier, rightMultiplier);
+  const mobileWireDrop = getMobilePanStackGeometry(mobileMaxMult, counterActive).wireDrop;
+  const mobileSvgH = Math.max(144, 62 + mobileWireDrop + 52);
 
   return (
     <div className="balance-canvas-wrap">
@@ -700,7 +726,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
       <div className="mobile-balance-wrap">
         <svg
           className="mobile-beam-svg"
-          viewBox="0 0 360 144"
+          viewBox={`0 0 360 ${mobileSvgH}`}
           aria-hidden="true"
         >
           <line
@@ -740,15 +766,30 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-28" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            <line
+              x1="0"
+              y1="5"
+              x2="-28"
+              y2={mobileWireDrop}
+              stroke="#141615"
+              strokeWidth="1.25"
+            />
+            <line
+              x1="0"
+              y1="5"
+              x2="28"
+              y2={mobileWireDrop}
+              stroke="#141615"
+              strokeWidth="1.25"
+            />
             {renderMobilePanWeights(
               leftMultiplier,
               counterActive,
               ratio.heavier === 'left',
+              mobileWireDrop,
             )}
             <path
-              d="M -32 34 Q 0 46 32 34 Z"
+              d={`M -32 ${mobileWireDrop} Q 0 ${mobileWireDrop + 12} 32 ${mobileWireDrop} Z`}
               fill={!counterActive && ratio.heavier === 'left' ? '#141615' : '#ECEAE3'}
               stroke="#141615"
               strokeWidth="1.4"
@@ -764,15 +805,30 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-28" y2="34" stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="28" y2="34" stroke="#141615" strokeWidth="1.25" />
+            <line
+              x1="0"
+              y1="5"
+              x2="-28"
+              y2={mobileWireDrop}
+              stroke="#141615"
+              strokeWidth="1.25"
+            />
+            <line
+              x1="0"
+              y1="5"
+              x2="28"
+              y2={mobileWireDrop}
+              stroke="#141615"
+              strokeWidth="1.25"
+            />
             {renderMobilePanWeights(
               rightMultiplier,
               counterActive,
               ratio.heavier === 'right',
+              mobileWireDrop,
             )}
             <path
-              d="M -32 34 Q 0 46 32 34 Z"
+              d={`M -32 ${mobileWireDrop} Q 0 ${mobileWireDrop + 12} 32 ${mobileWireDrop} Z`}
               fill={!counterActive && ratio.heavier === 'right' ? '#141615' : '#ECEAE3'}
               stroke="#141615"
               strokeWidth="1.4"
@@ -965,6 +1021,17 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Full True-Proportion 1:1 Counterweight Chamber (Desktop & Mobile) */}
+      {counterActive && (
+        <TrueScaleWeightChamber
+          lighterItem={lighterItem}
+          heavierItem={heavierItem}
+          lighterSide={ratio.heavier === 'left' ? 'right' : 'left'}
+          multiplier={ratio.factor}
+          activeMetric={activeMetric}
+        />
+      )}
     </div>
   );
 };
