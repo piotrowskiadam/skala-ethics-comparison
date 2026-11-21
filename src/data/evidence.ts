@@ -549,25 +549,46 @@ export const DECISIONS: DecisionItem[] = [
       'Opcja „dopłać 12 zł za neutralny lot (SAF / sadzenie drzew)” przy zakupie biletu to jeden z najbardziej krytykowanych przykładów greenwashingu w Europie.',
   },
   {
-    id: 'vegan-year',
-    name: '1 rok diety wegańskiej (oszczędność)',
-    shortLabel: '1 rok weganizmu',
+    id: 'diet-year-vegan',
+    name: '1 rok diety wegańskiej (cały ślad)',
+    shortLabel: '1 rok: weganizm',
     category: 'dieta',
-    unit: 'oszczędność vs średnia dieta mięsna',
+    unit: '365 dni pełnego wyżywienia (1 os.)',
     metrics: {
-      co2: 1497.0,
-      water: 419750,
-      land: 1778.0,
-      energy: 1241.0,
+      co2: 902.0,
+      water: 175200,
+      land: 1595.0,
+      energy: 2008.0,
     },
     primarySourceId: 'scarborough-2023',
     sourceIds: ['scarborough-2023', 'poore-2018', 'wfn-2011'],
     assumptions:
-      'Różnica między dietą wegańską a średnią dietą mięsną (50–99 g mięsa/dzień) przez 365 dni wg Scarborough et al. (Nature Food 2023) i WFN. Wartość reprezentuje UNIKNIĘTY wpływ.',
+      'Rzeczywisty całoroczny ślad diety wegańskiej: 2,47 kg CO₂e/dzień i 4,37 m²·rok gleby/dzień wg Scarborough et al. (Nature Food 2023, N = 55 504) oraz ślad wodny wg WFN.',
     ethicalContext:
-      'Największa codzienna dźwignia indywidualna dostępna bez kosztownych inwestycji: w ciągu roku oszczędza równowartość niemal 4 lotów po Europie i 1 778 m² gleby przed degradacją.',
+      'Najniższy realny ślad żywieniowy spośród wszystkich badanych diet — cały rok jedzenia na diecie roślinnej generuje mniej CO₂e niż 2,3 lotu Warszawa–Londyn.',
     greenwashingNote:
-      'Zamiast skupiać się na symbolicznych gestach jak papierowe słomki, kumulacja codziennych wyborów żywieniowych działa w skali tysięcy kilogramów CO₂e i setek tysięcy litrów wody.',
+      'Porównuj zawsze cały rok z całym rokiem: 1 rok diety wegańskiej ma ponad 4× niższy ślad węglowy i niemal 4× mniejsze zużycie gleby niż 1 rok diety wysokomięsnej (SAD).',
+  },
+  {
+    id: 'diet-year-high-meat',
+    name: '1 rok diety wysokomięsnej / zachodniej (SAD)',
+    shortLabel: '1 rok: dieta mięsna (SAD)',
+    category: 'dieta',
+    unit: '365 dni (>100 g mięsa/dzień, 1 os.)',
+    metrics: {
+      co2: 3738.0,
+      water: 824900,
+      land: 6125.0,
+      energy: 4307.0,
+    },
+    primarySourceId: 'scarborough-2023',
+    sourceIds: ['scarborough-2023', 'poore-2018', 'wfn-2011'],
+    assumptions:
+      'Rzeczywisty całoroczny ślad diety wysokomięsnej (>100 g mięsa dziennie, zbliżonej do Standard American Diet): 10,24 kg CO₂e/dzień i 16,78 m²·rok gleby/dzień wg Scarborough et al. (Nature Food 2023).',
+    ethicalContext:
+      'Roczne wyżywienie w modelu wysokomięsnym odpowiada równowartości ~9,5 lotu Warszawa–Londyn oraz zajmuje ponad 6 100 m² ziemi (prawie całe boisko piłkarskie na jedną osobę!).',
+    greenwashingNote:
+      'Różnica między rokiem diety zachodniej (SAD) a wegańskiej to ~2 836 kg CO₂e i ~4 530 m² gleby rocznie — to największa codzienna dźwignia indywidualna dostępna bez kosztów.',
   },
 ];
 
@@ -626,6 +647,17 @@ export const DUEL_PRESETS: DuelPreset[] = [
     verdictBody:
       'Paczka płynąca kontenerowcem z Chin emituje zaledwie 0,62 kg CO₂e wobec 12,40 kg w transporcie lotniczym. Pośpiech i „darmowy ekspres w 7 dni” mają ogromny ukryty koszt.',
     verifiedSourceId: 'defra-2024',
+  },
+  {
+    id: 'vegan-year-vs-sad',
+    label: '1 rok: Weganizm vs Dieta mięsna (SAD)',
+    leftId: 'diet-year-vegan',
+    rightId: 'diet-year-high-meat',
+    metric: 'co2',
+    verdictTitle: 'Cały rok jedzenia: ponad 4× mniej CO₂e i niemal 4× mniej gleby',
+    verdictBody:
+      'Rok diety wysokomięsnej / zachodniej (SAD) generuje 3 738 kg CO₂e i zajmuje 6 125 m² gleby wobec 902 kg CO₂e i 1 595 m² na diecie wegańskiej (Scarborough et al., Nature Food 2023).',
+    verifiedSourceId: 'scarborough-2023',
   },
   {
     id: 'train-vs-car',

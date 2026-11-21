@@ -316,7 +316,7 @@ export function App() {
                 className="swap-inline-btn swap-inline-link"
               >
                 <ArrowDown size={13} aria-hidden="true" />
-                <span>Pełna skala 16 decyzji</span>
+                <span>Pełna skala {DECISIONS.length} decyzji</span>
               </a>
             </div>
           </div>
