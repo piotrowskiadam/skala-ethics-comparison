@@ -6,6 +6,7 @@ import {
   VEGAN_BASELINES,
   formatNumberPL,
 } from '../data/evidence';
+import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
 
 interface VeganCumulativeSectionProps {
   baselineId: DietBaseline['id'];
@@ -48,26 +49,33 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
   const savedLand = baseline.dailySaved.land * days;
   const savedEnergy = baseline.dailySaved.energy * days;
 
+  const animCo2 = useAnimatedNumber(savedCo2, 320);
+  const animWater = useAnimatedNumber(savedWater, 320);
+  const animLand = useAnimatedNumber(savedLand, 320);
+  const animEnergy = useAnimatedNumber(savedEnergy, 320);
+
   const eqFlights = savedCo2 / 395;
   const eqChinaParcels = savedCo2 / 12.4;
   const eqShowers = savedWater / 60;
   const eqFootballPitches = savedLand / 7140;
   const eqHouseMonths = savedEnergy / 180;
 
-  // Build cumulative curve up to 10 years (3650 days)
+  // Multi-baseline chart scaled to the highest diet (high-meat over 10 years) so comparing baselines visually moves the slope!
   const maxDays = 3650;
-  const maxCo2 = baseline.dailySaved.co2 * maxDays;
+  const maxBaselineCo2 =
+    Math.max(...VEGAN_BASELINES.map((b) => b.dailySaved.co2)) * maxDays;
+
   const svgW = 720;
-  const svgH = 210;
-  const padL = 56;
-  const padR = 24;
-  const padT = 18;
+  const svgH = 228;
+  const padL = 52;
+  const padR = 112;
+  const padT = 20;
   const padB = 34;
   const plotW = svgW - padL - padR;
   const plotH = svgH - padT - padB;
 
   const xOf = (d: number) => padL + (d / maxDays) * plotW;
-  const yOf = (val: number) => padT + plotH - (val / maxCo2) * plotH;
+  const yOf = (val: number) => padT + plotH - (val / maxBaselineCo2) * plotH;
 
   const activeX = xOf(days);
   const activeY = yOf(savedCo2);
@@ -87,7 +95,11 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
   const poore = SOURCES['poore-2018'];
 
   return (
-    <section id="kumulacja-weganska" className="section-block" aria-labelledby="vegan-heading">
+    <section
+      id="kumulacja-weganska"
+      className="section-block"
+      aria-labelledby="vegan-heading"
+    >
       <div className="section-header">
         <div>
           <h2 id="vegan-heading" className="section-heading">
@@ -95,8 +107,8 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
           </h2>
           <p className="section-lead">
             Pojedynczy obiad wegański oszczędza kilka kilogramów CO₂e — ale powtarzany
-            codziennie kumuluje się w tysiące kilogramów emisji, setki tysięcy litrów wody
-            i tysiące metrów kwadratowych gleby ocalonej przed degradacją i wylesianiem.
+            codziennie kumuluje się w tony unikniętych emisji, setki tysięcy litrów wody i
+            tysiące metrów kwadratowych gleby ocalonej przed degradacją i wylesianiem.
           </p>
         </div>
 
@@ -106,18 +118,20 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className="source-pill"
+            aria-label="Scarborough et al. Nature Food 2023 — otwórz publikację w nowej karcie"
           >
             <span>Scarborough et al. · Nature Food 2023</span>
-            <ExternalLink size={11} />
+            <ExternalLink size={11} aria-hidden="true" />
           </a>
           <a
             href={poore.url}
             target="_blank"
             rel="noopener noreferrer"
             className="source-pill"
+            aria-label="Poore & Nemecek Science 2018 — otwórz publikację w nowej karcie"
           >
             <span>Poore &amp; Nemecek · Science 2018</span>
-            <ExternalLink size={11} />
+            <ExternalLink size={11} aria-hidden="true" />
           </a>
         </div>
       </div>
@@ -132,6 +146,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                 key={item.id}
                 type="button"
                 className={`baseline-option ${item.id === baselineId ? 'active' : ''}`}
+                aria-pressed={item.id === baselineId}
                 onClick={() => onChangeBaseline(item.id)}
               >
                 <span className="baseline-option-title">{item.label}</span>
@@ -154,7 +169,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
               value={days}
               onChange={(e) => onChangeDays(Number(e.target.value))}
               className="range-slider"
-              aria-label="Horyzont kumulacji w dniach"
+              aria-label="Horyzont kumulacji w dniach (od 7 dni do 10 lat)"
             />
             <div className="horizon-pills" style={{ marginTop: 8, width: '100%' }}>
               {HORIZON_PRESETS.map((p) => (
@@ -163,6 +178,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                   type="button"
                   style={{ flex: 1 }}
                   className={`horizon-pill ${days === p.days ? 'active' : ''}`}
+                  aria-pressed={days === p.days}
                   onClick={() => onChangeDays(p.days)}
                 >
                   {p.label}
@@ -185,13 +201,13 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
           </p>
         </div>
 
-        {/* Right Readouts + Cumulative Curve */}
+        {/* Right Readouts + 3-Baseline Cumulative Chart */}
         <div>
-          <div className="vegan-metrics-grid">
+          <div className="vegan-metrics-grid" aria-live="polite">
             <div className="vegan-metric-cell">
               <div className="vegan-metric-head">Uniknięty ślad węglowy</div>
               <div className="vegan-metric-big tabular">
-                −{formatNumberPL(savedCo2)}
+                −{formatNumberPL(animCo2)}
                 <span>kg CO₂e</span>
               </div>
               <div className="vegan-metric-equiv">
@@ -209,7 +225,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             <div className="vegan-metric-cell">
               <div className="vegan-metric-head">Zaoszczędzona woda słodka</div>
               <div className="vegan-metric-big tabular">
-                −{formatNumberPL(savedWater)}
+                −{formatNumberPL(animWater)}
                 <span>L wody</span>
               </div>
               <div className="vegan-metric-equiv">
@@ -222,7 +238,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             <div className="vegan-metric-cell">
               <div className="vegan-metric-head">Gleba ocalona przed degradacją</div>
               <div className="vegan-metric-big tabular">
-                −{formatNumberPL(savedLand)}
+                −{formatNumberPL(animLand)}
                 <span>m²·rok</span>
               </div>
               <div className="vegan-metric-equiv">
@@ -246,7 +262,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             <div className="vegan-metric-cell">
               <div className="vegan-metric-head">Zaoszczędzona energia</div>
               <div className="vegan-metric-big tabular">
-                −{formatNumberPL(savedEnergy)}
+                −{formatNumberPL(animEnergy)}
                 <span>kWh</span>
               </div>
               <div className="vegan-metric-equiv">
@@ -256,14 +272,14 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             </div>
           </div>
 
-          {/* Cumulative Trajectory SVG Chart */}
+          {/* 3-Baseline Cumulative Trajectory SVG Chart */}
           <div className="vegan-curve-panel">
             <div className="vegan-curve-header">
               <span className="vegan-curve-title">
-                Krzywa kumulacji unikniętego CO₂e (1 dzień → 10 lat)
+                Porównanie 3 ścieżek kumulacji CO₂e (7 dni → 10 lat)
               </span>
               <span className="mono" style={{ fontSize: '0.74rem', color: 'var(--copper)' }}>
-                +{formatNumberPL(baseline.dailySaved.co2)} kg CO₂e / każdy dzień
+                Aktywna: +{formatNumberPL(baseline.dailySaved.co2)} kg CO₂e / dzień
               </span>
             </div>
 
@@ -271,14 +287,14 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
               viewBox={`0 0 ${svgW} ${svgH}`}
               style={{ width: '100%', height: 'auto', display: 'block' }}
               role="img"
-              aria-label={`Wykres kumulacji oszczędności CO₂e dla diety wegańskiej: ${formatNumberPL(
-                savedCo2,
-              )} kg po ${days} dniach`}
+              aria-label={`Wykres kumulacji oszczędności CO₂e dla 3 diet bazowych. Wybrana ${
+                baseline.label
+              }: ${formatNumberPL(savedCo2)} kg po ${days} dniach.`}
             >
               {/* Horizontal reference gridlines */}
               {[0.25, 0.5, 0.75, 1].map((frac) => {
                 const y = padT + plotH * (1 - frac);
-                const val = maxCo2 * frac;
+                const val = maxBaselineCo2 * frac;
                 return (
                   <g key={frac}>
                     <line
@@ -303,16 +319,40 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                 );
               })}
 
-              {/* Full 10-year projection hairline */}
-              <line
-                x1={padL}
-                y1={padT + plotH}
-                x2={svgW - padR}
-                y2={padT}
-                stroke="rgba(20, 22, 21, 0.25)"
-                strokeWidth="1.25"
-                strokeDasharray="5 5"
-              />
+              {/* All 3 diet trajectories plotted simultaneously */}
+              {VEGAN_BASELINES.map((b) => {
+                const isSelected = b.id === baselineId;
+                const endY = yOf(b.dailySaved.co2 * maxDays);
+                const shortName =
+                  b.id === 'high-meat'
+                    ? 'Wysokomięsna'
+                    : b.id === 'medium-meat'
+                    ? 'Średnia mięsna'
+                    : 'Niskomięsna';
+                return (
+                  <g key={b.id}>
+                    <line
+                      x1={padL}
+                      y1={padT + plotH}
+                      x2={svgW - padR}
+                      y2={endY}
+                      stroke={isSelected ? 'rgba(164, 75, 39, 0.45)' : 'rgba(20, 22, 21, 0.24)'}
+                      strokeWidth={isSelected ? '1.6' : '1.15'}
+                      strokeDasharray="4 4"
+                    />
+                    <text
+                      x={svgW - padR + 8}
+                      y={endY + 4}
+                      fontFamily="JetBrains Mono, monospace"
+                      fontSize="9.5"
+                      fontWeight={isSelected ? '700' : '500'}
+                      fill={isSelected ? '#A44B27' : '#5A605C'}
+                    >
+                      {shortName}
+                    </text>
+                  </g>
+                );
+              })}
 
               {/* Active accumulated copper wedge */}
               <path d={areaPath} fill="rgba(164, 75, 39, 0.16)" />

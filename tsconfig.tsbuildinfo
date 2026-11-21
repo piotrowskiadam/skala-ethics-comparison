@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/components/MetrologyBalance.tsx","./src/components/SourcesLedgerSection.tsx","./src/components/UnifiedScaleSection.tsx","./src/components/VeganCumulativeSection.tsx","./src/data/evidence.ts"],"version":"5.8.3"}
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/MetrologyBalance.tsx","./src/components/SourcesLedgerSection.tsx","./src/components/UnifiedScaleSection.tsx","./src/components/VeganCumulativeSection.tsx","./src/data/evidence.ts","./src/hooks/useAnimatedNumber.ts"],"version":"5.8.3"}
