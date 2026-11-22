@@ -3,7 +3,6 @@ import { ArrowLeftRight, ChevronDown, ExternalLink, Scale } from 'lucide-react';
 import {
   DecisionItem,
   METRICS,
-  METRIC_ORDER,
   MetricKey,
   SOURCES,
   formatMetricValue,
@@ -20,7 +19,6 @@ interface MetrologyBalanceProps {
   rightFreq: number;
   activeMetric: MetricKey;
   isCounterbalanced: boolean;
-  onChangeMetric: (m: MetricKey) => void;
   onToggleCounterbalance: () => void;
   onOpenPicker: (side: 'left' | 'right') => void;
   onChangeLeftFreq: (freq: number) => void;
@@ -234,7 +232,6 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
   rightFreq,
   activeMetric,
   isCounterbalanced,
-  onChangeMetric,
   onToggleCounterbalance,
   onOpenPicker,
   onChangeLeftFreq,
@@ -407,7 +404,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               ? 'IDENTYCZNE OBCIĄŻENIE'
               : `PORÓWNANIE · ${METRICS[activeMetric].shortLabel}`}
           </span>
-          <h1 className="hero-ratio-number tabular">
+          <h2 className="hero-ratio-number tabular">
             {counterActive ? (
               <>
                 <span className="ratio-accent">
@@ -429,7 +426,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 )}
               </>
             )}
-          </h1>
+          </h2>
         </div>
 
         {!isSame && (
@@ -1041,43 +1038,6 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             />
           </div>
         </div>
-      </div>
-
-      {/* 4-Lens Multi-Metric Trade-off Fingerprint (all 4 dimensions alive simultaneously!) */}
-      <div className="fingerprint-strip" role="group" aria-label="Profil porównania we wszystkich 4 wymiarach">
-        {METRIC_ORDER.map((mKey) => {
-          const lv = leftItem.metrics[mKey] * leftFreq;
-          const rv = rightItem.metrics[mKey] * rightFreq;
-          const r = formatRatio(lv, rv);
-          const isCurrent = mKey === activeMetric;
-          const total = Math.max(lv + rv, 1e-6);
-          const lShare = Math.max(0.04, lv / total);
-          const rShare = Math.max(0.04, rv / total);
-          return (
-            <button
-              key={mKey}
-              type="button"
-              className={`fingerprint-cell ${isCurrent ? 'active' : ''}`}
-              aria-pressed={isCurrent}
-              onClick={() => onChangeMetric(mKey)}
-            >
-              <div className="fingerprint-top">
-                <span className="mono fingerprint-metric">{METRICS[mKey].label}</span>
-                <strong className="mono fingerprint-ratio">{r.label}</strong>
-              </div>
-              <div className="fingerprint-bar" aria-hidden="true">
-                <span
-                  className={`fingerprint-bar-l ${r.heavier === 'left' ? 'is-copper' : ''}`}
-                  style={{ transform: `scaleX(${lShare})` }}
-                />
-                <span
-                  className={`fingerprint-bar-r ${r.heavier === 'right' ? 'is-copper' : ''}`}
-                  style={{ transform: `scaleX(${rShare})` }}
-                />
-              </div>
-            </button>
-          );
-        })}
       </div>
 
       {/* Full True-Proportion 1:1 Counterweight Chamber */}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowDown,
   ArrowLeftRight,
   BookOpen,
   Check,
@@ -11,16 +10,13 @@ import {
 } from 'lucide-react';
 import {
   DECISIONS,
-  DIET_PROFILES,
   DUEL_PRESETS,
   DietProfile,
-  EU_BASELINE_DIET,
   METRICS,
   METRIC_ORDER,
   MetricKey,
   SOURCES,
   formatMetricValue,
-  formatNumberPL,
   formatRatio,
   getDecisionById,
 } from './data/evidence';
@@ -31,15 +27,30 @@ import { VeganCumulativeSection } from './components/VeganCumulativeSection';
 import { SourcesLedgerSection } from './components/SourcesLedgerSection';
 import { downloadMetrologyShareCard } from './utils/exportShareCard';
 
-const LEDGER_HORIZONS = [
-  { label: '30 dni', days: 30 },
-  { label: '1 rok', days: 365 },
-  { label: '5 lat', days: 1825 },
-];
-
 const VALID_IDS = new Set(DECISIONS.map((d) => d.id));
 const VALID_METRICS = new Set<MetricKey>(METRIC_ORDER);
 const VALID_FREQS = new Set([1, 52, 365]);
+
+const HERO_STORIES = [
+  {
+    presetId: 'pl-vs-china',
+    eyebrow: '32,6× więcej CO₂e',
+    title: 'Paczka z Chin vs magazyn w PL',
+    sub: 'Fracht lotniczy kontra logistyka lądowa',
+  },
+  {
+    presetId: 'ai-vs-beef-water',
+    eyebrow: '1 733× więcej wody',
+    title: '100 promptów AI vs stek wołowy',
+    sub: 'Mit wodny AI zestawiony z jednym obiadem',
+  },
+  {
+    presetId: 'vegan-year-vs-sad',
+    eyebrow: '4,1× mniej CO₂e',
+    title: '1 rok: weganizm vs dieta mięsna',
+    sub: 'Kumulacja codziennych wyborów przez rok',
+  },
+];
 
 function readInitialParams(): {
   left: string;
@@ -72,6 +83,14 @@ function readInitialParams(): {
   };
 }
 
+function scrollElIntoViewRespectingMotion(el: HTMLElement | null) {
+  if (!el) return;
+  const reduced =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+}
+
 export function App() {
   const initial = useMemo(() => readInitialParams(), []);
   const [activeMetric, setActiveMetric] = useState<MetricKey>(initial.metric);
@@ -88,7 +107,6 @@ export function App() {
 
   const sourceCount = useMemo(() => Object.keys(SOURCES).length, []);
 
-  // Sync active comparison & habit frequencies with URL query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('l', leftId);
@@ -109,7 +127,6 @@ export function App() {
     setRightFreq(leftFreq);
   }, [leftId, rightId, leftFreq, rightFreq]);
 
-  // Keyboard accelerators: 1-4 switch metric, S swaps pans, B toggles counterbalance
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (pickerSide) return;
@@ -204,23 +221,6 @@ export function App() {
     ratio,
   ]);
 
-  const veganDiet =
-    DIET_PROFILES.find((d) => d.id === 'vegan') ?? DIET_PROFILES[3];
-
-  const veganCo2 = (EU_BASELINE_DIET.daily.co2 - veganDiet.daily.co2) * veganDays;
-  const veganWater = (EU_BASELINE_DIET.daily.water - veganDiet.daily.water) * veganDays;
-  const veganLand = (EU_BASELINE_DIET.daily.land - veganDiet.daily.land) * veganDays;
-
-  const ledgerBarPct = Math.max(
-    6,
-    Math.min(
-      100,
-      ((Math.log10(Math.max(veganDays, 7)) - Math.log10(7)) /
-        (Math.log10(3650) - Math.log10(7))) *
-        100,
-    ),
-  );
-
   const handleSelectLeft = (id: string) => {
     setLeftId(id);
     setIsCounterbalanced(false);
@@ -231,7 +231,7 @@ export function App() {
     setIsCounterbalanced(false);
   };
 
-  const handleSelectPreset = (presetId: string) => {
+  const handleSelectPreset = (presetId: string, scrollToBalance = false) => {
     const preset = DUEL_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
     setLeftId(preset.leftId);
@@ -240,6 +240,27 @@ export function App() {
     setRightFreq(1);
     setActiveMetric(preset.metric);
     setIsCounterbalanced(false);
+    if (scrollToBalance) {
+      scrollElIntoViewRespectingMotion(document.getElementById('waga'));
+    }
+  };
+
+  const handleToggleCounterbalance = () => {
+    setIsCounterbalanced((prev) => {
+      const next = !prev;
+      if (next) {
+        window.setTimeout(() => {
+          const chamber = document.getElementById('komora-odwaznikow');
+          if (chamber) {
+            const rect = chamber.getBoundingClientRect();
+            if (rect.top > window.innerHeight * 0.78) {
+              scrollElIntoViewRespectingMotion(chamber);
+            }
+          }
+        }, 80);
+      }
+      return next;
+    });
   };
 
   const handleCopyShareLink = async () => {
@@ -267,11 +288,11 @@ export function App() {
 
   return (
     <div>
-      <a href="#top" className="skip-link">
-        Przejdź do instrumentu SKALA
+      <a href="#waga" className="skip-link">
+        Przejdź do wagi metrologicznej
       </a>
 
-      {/* TOP INSTRUMENT BAR */}
+      {/* STICKY INSTRUMENT BAR WITH LIVE 4-LENS RATIOS */}
       <header className="top-bar">
         <div className="top-bar-inner">
           <a href="#top" className="brand-lockup" aria-label="SKALA — powrót na górę">
@@ -286,6 +307,10 @@ export function App() {
             {METRIC_ORDER.map((key) => {
               const m = METRICS[key];
               const isActive = activeMetric === key;
+              const tabRatio = formatRatio(
+                leftItem.metrics[key] * leftFreq,
+                rightItem.metrics[key] * rightFreq,
+              );
               return (
                 <button
                   key={key}
@@ -294,7 +319,8 @@ export function App() {
                   aria-pressed={isActive}
                   onClick={() => setActiveMetric(key)}
                 >
-                  {m.label}
+                  <span>{m.label}</span>
+                  <span className="tab-ratio-badge mono">{tabRatio.label}</span>
                 </button>
               );
             })}
@@ -310,8 +336,47 @@ export function App() {
       </header>
 
       <main id="top">
-        {/* FIRST VIEWPORT: PRECISION BALANCE INSTRUMENT */}
-        <section className="balance-stage" aria-label="Interaktywna waga metrologiczna">
+        {/* ACT I: CLEAN, WELCOMING EDITORIAL LANDING HERO (ZERO TABELKOZA) */}
+        <section className="landing-hero" aria-label="Wprowadzenie do instrumentu SKALA">
+          <div className="landing-hero-inner">
+            <div className="landing-hero-copy">
+              <h1 className="landing-headline">
+                Ile naprawdę ważą Twoje codzienne decyzje?
+              </h1>
+              <p className="landing-subhead">
+                Jedna fizyczna skala zamiast greenwashingu. Zważ na żywo wpływ codziennych
+                wyborów na klimat, wodę, glebę i energię — każda liczba pochodzi ze
+                zweryfikowanych badań LCA.
+              </p>
+            </div>
+
+            <div className="hero-stories-grid" role="group" aria-label="Najciekawsze zestawienia na start">
+              {HERO_STORIES.map((story) => {
+                const isSelected = activePreset?.id === story.presetId;
+                return (
+                  <button
+                    key={story.presetId}
+                    type="button"
+                    className={`hero-story-card ${isSelected ? 'active' : ''}`}
+                    aria-pressed={isSelected}
+                    onClick={() => handleSelectPreset(story.presetId, true)}
+                  >
+                    <span className="hero-story-stat mono">{story.eyebrow}</span>
+                    <strong className="hero-story-title">{story.title}</strong>
+                    <span className="hero-story-sub">{story.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ACT II: INTERACTIVE PRECISION BALANCE INSTRUMENT */}
+        <section
+          id="waga"
+          className="balance-stage"
+          aria-label="Interaktywna waga metrologiczna"
+        >
           <MetrologyBalance
             leftItem={leftItem}
             rightItem={rightItem}
@@ -319,8 +384,7 @@ export function App() {
             rightFreq={rightFreq}
             activeMetric={activeMetric}
             isCounterbalanced={isCounterbalanced}
-            onChangeMetric={setActiveMetric}
-            onToggleCounterbalance={() => setIsCounterbalanced((prev) => !prev)}
+            onToggleCounterbalance={handleToggleCounterbalance}
             onOpenPicker={setPickerSide}
             onChangeLeftFreq={(f) => {
               setLeftFreq(f);
@@ -332,101 +396,14 @@ export function App() {
             }}
             onSwap={handleSwap}
           />
-
-          {/* Equal-Edged Instrument Preset Strip & Utility Bar */}
-          <div className="preset-deck">
-            <div className="preset-deck-header">
-              <span className="mono preset-deck-label">
-                ZESTAWIENIA KONTROLNE · MIT VS SKALA
-              </span>
-              <div className="preset-deck-utils">
-                <button
-                  type="button"
-                  className="swap-inline-btn hide-on-mobile"
-                  onClick={handleSwap}
-                >
-                  <ArrowLeftRight size={13} aria-hidden="true" />
-                  <span>Zamień (S)</span>
-                </button>
-                <button
-                  type="button"
-                  className="swap-inline-btn"
-                  onClick={handleCopyShareLink}
-                >
-                  {copyState === 'copied' ? (
-                    <>
-                      <Check size={13} aria-hidden="true" />
-                      <span>Skopiowano link!</span>
-                    </>
-                  ) : copyState === 'error' ? (
-                    <>
-                      <Link2 size={13} aria-hidden="true" />
-                      <span>Skopiuj z paska URL</span>
-                    </>
-                  ) : (
-                    <>
-                      <Link2 size={13} aria-hidden="true" />
-                      <span>Kopiuj link</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className="swap-inline-btn"
-                  onClick={handleDownloadPng}
-                >
-                  <Download size={13} aria-hidden="true" />
-                  <span>Karta PNG</span>
-                </button>
-                <a href="#skala-rzedow" className="swap-inline-btn swap-inline-link">
-                  <ArrowDown size={13} aria-hidden="true" />
-                  <span>Skala ({DECISIONS.length})</span>
-                </a>
-              </div>
-            </div>
-
-            <div className="preset-strip-shell">
-              <div
-                className="preset-strip"
-                role="group"
-                aria-label="Gotowe zestawienia kontrolne"
-              >
-                {DUEL_PRESETS.map((preset, idx) => {
-                  const isCurrent =
-                    activePreset?.id === preset.id && activeMetric === preset.metric;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      className={`preset-cell ${isCurrent ? 'active' : ''}`}
-                      aria-pressed={isCurrent}
-                      onClick={() => handleSelectPreset(preset.id)}
-                    >
-                      <span className="preset-cell-meta mono">
-                        <span>{String(idx + 1).padStart(2, '0')}</span>
-                        <span>{METRICS[preset.metric].label}</span>
-                      </span>
-                      <span className="preset-cell-title">{preset.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
         </section>
 
-        {/* SPLIT BOTTOM CALIBRATION LEDGER */}
-        <section
-          className="calibration-ledger"
-          aria-label="Werdykt etyczny i kumulacja diety wegańskiej"
-        >
-          <div className="calibration-ledger-inner">
-            <div className="ledger-cell">
-              <h2 className="ledger-title">
-                <span>KONTEKST ETYCZNY I GREENWASHING</span>
-              </h2>
-              <p className="ledger-body">{contextCopy.text}</p>
-              <div className="ledger-sources-row">
+        {/* FOCUSED VERDICT BAND (SINGLE CLEAR TAKEAWAY + SHARE + ASSUMPTIONS) */}
+        <section className="verdict-band" aria-label="Werdykt etyczny i założenia metodologiczne">
+          <div className="verdict-band-inner">
+            <div className="verdict-main">
+              <p className="verdict-body">{contextCopy.text}</p>
+              <div className="verdict-actions-row">
                 <a
                   href={contextCopy.source.url}
                   target="_blank"
@@ -434,81 +411,64 @@ export function App() {
                   className="source-pill"
                   aria-label={`Zweryfikowano ${contextCopy.source.shortBadge} — otwórz publikację w nowej karcie`}
                 >
-                  <span>Zweryfikowano · {contextCopy.source.shortBadge}</span>
+                  <span>Źródło · {contextCopy.source.shortBadge}</span>
                   <ExternalLink size={11} aria-hidden="true" />
                 </a>
+
                 <button
                   type="button"
                   className="methodology-toggle-btn mono"
                   aria-expanded={showMethodology}
                   onClick={() => setShowMethodology((prev) => !prev)}
                 >
-                  <span>Założenia metodologiczne i etyka</span>
+                  <span>Założenia LCA i etyka</span>
                   <ChevronDown
                     size={13}
                     aria-hidden="true"
                     className={`chevron-icon ${showMethodology ? 'open' : ''}`}
                   />
                 </button>
-              </div>
-            </div>
 
-            <div className="ledger-cell">
-              <h2 className="ledger-title">
-                <span>
-                  KUMULACJA: DIETA WEGAŃSKA (
-                  {veganDays === 365
-                    ? '1 ROK'
-                    : veganDays === 30
-                    ? '30 DNI'
-                    : veganDays === 1825
-                    ? '5 LAT'
-                    : `${veganDays} DNI`}
-                  )
-                </span>
-                <div className="horizon-pills" role="group" aria-label="Szybki wybór okresu">
-                  {LEDGER_HORIZONS.map((h) => (
-                    <button
-                      key={h.days}
-                      type="button"
-                      className={`horizon-pill ${veganDays === h.days ? 'active' : ''}`}
-                      aria-pressed={veganDays === h.days}
-                      onClick={() => setVeganDays(h.days)}
-                    >
-                      {h.label}
-                    </button>
-                  ))}
+                <div className="verdict-share-group">
+                  <button
+                    type="button"
+                    className="swap-inline-btn hide-on-mobile"
+                    onClick={handleSwap}
+                  >
+                    <ArrowLeftRight size={13} aria-hidden="true" />
+                    <span>Zamień (S)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="swap-inline-btn"
+                    onClick={handleCopyShareLink}
+                  >
+                    {copyState === 'copied' ? (
+                      <>
+                        <Check size={13} aria-hidden="true" />
+                        <span>Skopiowano!</span>
+                      </>
+                    ) : copyState === 'error' ? (
+                      <>
+                        <Link2 size={13} aria-hidden="true" />
+                        <span>Skopiuj z paska URL</span>
+                      </>
+                    ) : (
+                      <>
+                        <Link2 size={13} aria-hidden="true" />
+                        <span>Link</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className="swap-inline-btn"
+                    onClick={handleDownloadPng}
+                  >
+                    <Download size={13} aria-hidden="true" />
+                    <span>Karta PNG</span>
+                  </button>
                 </div>
-              </h2>
-
-              <div className="copper-bar-track" aria-hidden="true">
-                <div
-                  className="copper-bar-fill"
-                  style={{ transform: `scaleX(${ledgerBarPct / 100})` }}
-                />
-              </div>
-
-              <div className="time-scale-ticks mono" aria-hidden="true">
-                <span>7 dni</span>
-                <span>30 dni</span>
-                <span>1 rok</span>
-                <span>5 lat</span>
-                <span>10 lat</span>
-              </div>
-
-              <div className="ledger-vegan-stats tabular">
-                <span>
-                  Zaoszczędzono: <strong>{formatNumberPL(veganCo2)} kg CO₂e</strong>
-                </span>
-                <span>
-                  <strong>{formatNumberPL(veganWater)} L</strong> wody
-                </span>
-                <span>
-                  <strong>{formatNumberPL(veganLand)} m²</strong> gleby
-                </span>
-                <a href="#kumulacja-weganska" className="ledger-vegan-link">
-                  Pełny symulator →
-                </a>
               </div>
             </div>
           </div>
@@ -522,7 +482,7 @@ export function App() {
                     <span className="mono">{leftItem.unit}</span>
                   </div>
                   <p className="methodology-text">
-                    <strong>Założenia LCA (ocena cyklu życia):</strong> {leftItem.assumptions}
+                    <strong>Założenia LCA:</strong> {leftItem.assumptions}
                   </p>
                   <p className="methodology-text">
                     <strong>Kontekst etyczny:</strong> {leftItem.ethicalContext}
@@ -535,7 +495,7 @@ export function App() {
                     <span className="mono">{rightItem.unit}</span>
                   </div>
                   <p className="methodology-text">
-                    <strong>Założenia LCA (ocena cyklu życia):</strong> {rightItem.assumptions}
+                    <strong>Założenia LCA:</strong> {rightItem.assumptions}
                   </p>
                   <p className="methodology-text">
                     <strong>Kontekst etyczny:</strong> {rightItem.ethicalContext}
@@ -546,7 +506,15 @@ export function App() {
           )}
         </section>
 
-        {/* SECTION 2: UNIFIED ORDER-OF-MAGNITUDE SCALE */}
+        {/* ACT III: DARK GRAPHITE DIET CUMULATIVE IMPACT (INSTANT CAUSE -> EFFECT) */}
+        <VeganCumulativeSection
+          selectedDietId={selectedDietId}
+          days={veganDays}
+          onChangeDiet={setSelectedDietId}
+          onChangeDays={setVeganDays}
+        />
+
+        {/* ACT IV: VISUAL ORDER-OF-MAGNITUDE SCALE (8 ICONIC ITEMS + EXPAND) */}
         <UnifiedScaleSection
           activeMetric={activeMetric}
           leftId={leftId}
@@ -555,15 +523,7 @@ export function App() {
           onAssignRight={handleSelectRight}
         />
 
-        {/* SECTION 3: DEEP-DIVE DIET CUMULATIVE IMPACT (DARK GRAPHITE BAND) */}
-        <VeganCumulativeSection
-          selectedDietId={selectedDietId}
-          days={veganDays}
-          onChangeDiet={setSelectedDietId}
-          onChangeDays={setVeganDays}
-        />
-
-        {/* SECTION 4: FULL SCIENTIFIC BIBLIOGRAPHY */}
+        {/* ACT V: SCIENTIFIC BIBLIOGRAPHY */}
         <SourcesLedgerSection />
       </main>
 
@@ -574,7 +534,6 @@ export function App() {
         </span>
       </footer>
 
-      {/* Custom Engraved Specimen Picker Modal */}
       {pickerSide && (
         <SpecimenPickerModal
           side={pickerSide}

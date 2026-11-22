@@ -35,13 +35,30 @@ export const UnifiedScaleSection: React.FC<UnifiedScaleSectionProps> = ({
 }) => {
   const [scaleMode, setScaleMode] = useState<'log' | 'linear'>('log');
   const [category, setCategory] = useState<DecisionCategory | 'all'>('all');
+  const [showAll, setShowAll] = useState(false);
   const [hasAssignedFromTable, setHasAssignedFromTable] = useState(false);
 
   const meta = METRICS[activeMetric];
   const leftItem = getDecisionById(leftId);
   const rightItem = getDecisionById(rightId);
 
-  const items = useMemo(() => {
+  const ICONIC_IDS = useMemo(
+    () =>
+      new Set([
+        'ai-100-prompts',
+        'parcel-pl',
+        'meal-vegan',
+        'parcel-china-air',
+        'meal-beef',
+        'smartphone-new',
+        'flight-eu',
+        'diet-year-vegan',
+        'diet-year-high-meat',
+      ]),
+    [],
+  );
+
+  const allFiltered = useMemo(() => {
     const filtered =
       category === 'all'
         ? DECISIONS
@@ -50,6 +67,13 @@ export const UnifiedScaleSection: React.FC<UnifiedScaleSectionProps> = ({
       (a, b) => a.metrics[activeMetric] - b.metrics[activeMetric],
     );
   }, [activeMetric, category]);
+
+  const items = useMemo(() => {
+    if (showAll || category !== 'all') return allFiltered;
+    return allFiltered.filter(
+      (d) => ICONIC_IDS.has(d.id) || d.id === leftId || d.id === rightId,
+    );
+  }, [allFiltered, showAll, category, ICONIC_IDS, leftId, rightId]);
 
   const { minVal, maxVal, logMin, logMax } = useMemo(() => {
     const values = DECISIONS.map((d) => d.metrics[activeMetric]);
@@ -274,6 +298,18 @@ export const UnifiedScaleSection: React.FC<UnifiedScaleSectionProps> = ({
           );
         })}
       </div>
+
+      {category === 'all' && allFiltered.length > items.length && (
+        <div className="scale-expand-row">
+          <button
+            type="button"
+            className="outline-btn"
+            onClick={() => setShowAll(true)}
+          >
+            Pokaż wszystkie {allFiltered.length} decyzji na skali
+          </button>
+        </div>
+      )}
     </section>
   );
 };

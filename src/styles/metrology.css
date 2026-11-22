@@ -188,15 +188,30 @@ input {
   appearance: none;
   background: transparent;
   border: none;
-  padding: 0 14px;
-  font-size: 0.92rem;
-  font-weight: 500;
+  padding: 0 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   transition: color 180ms var(--ease-expo);
+}
+
+.tab-ratio-badge {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: rgba(20, 22, 21, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.metric-tab.active .tab-ratio-badge {
+  background: var(--copper-tint);
+  color: var(--copper);
 }
 
 .metric-tab:hover {
@@ -249,12 +264,265 @@ input {
 }
 
 /* =========================================
+   ACT I: EDITORIAL LANDING HERO
+   ========================================= */
+.landing-hero {
+  border-bottom: 1.5px solid var(--rule);
+  background: rgba(244, 242, 236, 0.55);
+}
+
+.landing-hero-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 36px 28px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.landing-hero-copy {
+  max-width: 780px;
+}
+
+.landing-headline {
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 3.35rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.landing-subhead {
+  margin: 12px 0 0;
+  font-size: clamp(0.98rem, 1.3vw, 1.12rem);
+  line-height: 1.5;
+  color: var(--ink-secondary);
+  max-width: 62ch;
+}
+
+.hero-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-story-card {
+  appearance: none;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  transition: transform 180ms var(--ease-expo), border-color 180ms var(--ease-expo),
+    background-color 180ms var(--ease-expo), box-shadow 180ms var(--ease-expo);
+}
+
+.hero-story-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--copper);
+  box-shadow: 0 8px 20px rgba(20, 22, 21, 0.08);
+}
+
+.hero-story-card:active {
+  transform: translateY(0);
+}
+
+.hero-story-card.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg-card);
+}
+
+.hero-story-stat {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--copper);
+}
+
+.hero-story-card.active .hero-story-stat {
+  color: #e07a4f;
+}
+
+.hero-story-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.hero-story-sub {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  line-height: 1.35;
+}
+
+.hero-story-card.active .hero-story-sub {
+  color: #c2c1ba;
+}
+
+/* =========================================
+   FOCUSED VERDICT BAND
+   ========================================= */
+.verdict-band {
+  border-top: 1.5px solid var(--rule);
+  border-bottom: 1.5px solid var(--rule);
+  background: rgba(244, 242, 236, 0.55);
+}
+
+.verdict-band-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 28px;
+}
+
+.verdict-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.verdict-body {
+  margin: 0;
+  font-size: 1.04rem;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 82ch;
+}
+
+.verdict-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.verdict-share-group {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =========================================
+   ACT III: INSTANT CAUSE -> EFFECT DIET BAND
+   ========================================= */
+.diet-control-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  background: #1b1e1c;
+  border: 1px solid rgba(236, 234, 227, 0.18);
+  border-radius: 8px;
+}
+
+.diet-pill-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.diet-switch-btn {
+  appearance: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(236, 234, 227, 0.18);
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-height: 46px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #eceae3;
+  transition: border-color 160ms var(--ease-expo), background-color 160ms var(--ease-expo);
+}
+
+.diet-switch-btn:hover {
+  border-color: rgba(236, 234, 227, 0.45);
+}
+
+.diet-switch-btn.active.is-saving {
+  border: 1.5px solid #5bb381;
+  background: rgba(91, 179, 129, 0.14);
+}
+
+.diet-switch-btn.active.is-worse {
+  border: 1.5px solid #e07a4f;
+  background: rgba(224, 122, 79, 0.15);
+}
+
+.diet-switch-btn.active.is-base {
+  border: 1.5px solid #eceae3;
+  background: rgba(236, 234, 227, 0.1);
+}
+
+.diet-switch-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.diet-horizon-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(236, 234, 227, 0.12);
+}
+
+.diet-horizon-slider-wrap {
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.diet-horizon-label {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: #c2c1ba;
+}
+
+.diet-stage-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.diet-chart-panel {
+  margin-top: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.scale-expand-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+/* =========================================
    HERO BALANCE STAGE (FIRST VIEWPORT)
    ========================================= */
 .balance-stage {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 18px 28px 26px;
+  padding: 20px 28px 26px;
+  scroll-margin-top: 72px;
 }
 
 .balance-canvas-wrap {
@@ -729,7 +997,7 @@ input {
 .picker-sheet {
   width: 100%;
   max-width: 640px;
-  max-height: min(82vh, 680px);
+  max-height: min(84dvh, 680px);
   background: var(--bg-enamel);
   border: 2px solid var(--rule);
   border-radius: 8px;
@@ -740,11 +1008,12 @@ input {
 }
 
 .picker-header {
+  flex-shrink: 0;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 20px 14px;
+  padding: 16px 18px 12px;
   border-bottom: 1.5px solid var(--rule);
   background: var(--bg-card);
 }
@@ -759,18 +1028,19 @@ input {
 
 .picker-title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .picker-close-btn {
+  flex-shrink: 0;
   appearance: none;
   background: transparent;
   border: 1.5px solid var(--rule);
   border-radius: 6px;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -785,15 +1055,16 @@ input {
 }
 
 .picker-search-wrap {
+  flex-shrink: 0;
   position: relative;
-  padding: 12px 20px 8px;
+  padding: 10px 18px 8px;
 }
 
 .picker-search-icon {
   position: absolute;
-  left: 32px;
+  left: 30px;
   top: 50%;
-  transform: translateY(-35%);
+  transform: translateY(-40%);
   color: var(--ink-muted);
   pointer-events: none;
 }
@@ -802,7 +1073,7 @@ input {
   width: 100%;
   min-height: 44px;
   padding: 10px 14px 10px 38px;
-  font-size: 1rem; /* >=16px prevents iOS Safari auto-zoom */
+  font-size: 1rem;
   background: var(--bg-card);
   border: 1.5px solid var(--rule);
   border-radius: 6px;
@@ -810,19 +1081,33 @@ input {
 }
 
 .picker-cats {
+  flex-shrink: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
   gap: 6px;
-  padding: 4px 20px 12px;
+  padding: 2px 18px 10px;
   border-bottom: 1px solid var(--rule-light);
 }
 
+.picker-cats::-webkit-scrollbar {
+  display: none;
+}
+
+.picker-cats .filter-chip {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Block flow inside scrolling list prevents Firefox Mobile flex-shrink row overlap! */
 .picker-list {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding: 8px 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  padding: 10px 14px 16px;
 }
 
 .picker-empty {
@@ -837,16 +1122,21 @@ input {
   width: 100%;
   text-align: left;
   background: var(--bg-card);
-  border: 1px solid var(--rule-faint);
+  border: 1px solid var(--rule-light);
   border-radius: 6px;
-  padding: 11px 14px;
-  min-height: 52px;
+  padding: 12px 14px;
+  margin-bottom: 7px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   cursor: pointer;
+  flex-shrink: 0;
   transition: border-color 140ms var(--ease-expo), background-color 140ms var(--ease-expo);
+}
+
+.picker-row:last-child {
+  margin-bottom: 0;
 }
 
 .picker-row:hover {
@@ -2256,6 +2546,18 @@ input {
    RESPONSIVE BREAKPOINTS
    ========================================= */
 @media (max-width: 1080px) {
+  .diet-stage-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .diet-pill-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hero-stories-grid {
+    grid-template-columns: 1fr;
+  }
+
   .preset-strip {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -2305,8 +2607,61 @@ input {
 }
 
 @media (max-width: 720px) {
+  .landing-hero-inner {
+    padding: 22px 14px 20px;
+    gap: 16px;
+  }
+
+  .hero-story-card {
+    padding: 13px 14px;
+  }
+
+  .verdict-band-inner {
+    padding: 18px 14px;
+  }
+
+  .verdict-share-group {
+    margin-left: 0;
+  }
+
+  .tab-ratio-badge {
+    display: none;
+  }
+
+  .picker-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .picker-sheet {
+    max-height: 88dvh;
+    border-radius: 14px 14px 0 0;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .diet-control-bar {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .diet-switch-btn {
+    padding: 8px 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .diet-horizon-slider-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
   .balance-stage {
     padding: 14px 14px 20px;
+    scroll-margin-top: 108px;
   }
 
   .hero-ratio-bar {
