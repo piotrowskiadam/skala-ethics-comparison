@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeftRight, ExternalLink, Scale } from 'lucide-react';
 import {
   CATEGORY_LABELS,
@@ -59,6 +59,27 @@ function formatMultiplier(factor: number): string {
   });
 }
 
+function describeArc(
+  cx: number,
+  cy: number,
+  r: number,
+  startDeg: number,
+  endDeg: number,
+): string {
+  if (Math.abs(endDeg - startDeg) < 0.5) return '';
+  const s = ((startDeg - 90) * Math.PI) / 180;
+  const e = ((endDeg - 90) * Math.PI) / 180;
+  const x1 = cx + r * Math.cos(s);
+  const y1 = cy + r * Math.sin(s);
+  const x2 = cx + r * Math.cos(e);
+  const y2 = cy + r * Math.sin(e);
+  const largeArc = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+  const sweep = endDeg > startDeg ? 1 : 0;
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} ${sweep} ${x2.toFixed(
+    2,
+  )} ${y2.toFixed(2)}`;
+}
+
 function getMobilePanStackGeometry(multiplier: number, isCounterActive: boolean) {
   if (!isCounterActive || multiplier <= 1.05) {
     return { wireDrop: 34, rows: 1, blockW: 10.5, blockH: 6.5, gapX: 2.2, gapY: 2, cols: 4 };
@@ -67,8 +88,6 @@ function getMobilePanStackGeometry(multiplier: number, isCounterActive: boolean)
   const hasFrac = multiplier - fullCount >= 0.08;
   const total = fullCount + (hasFrac ? 1 : 0);
 
-  // Show ALL blocks directly on the SVG pan up to 40 blocks (e.g. 4.7x, 13.6x, 32.6x),
-  // dynamically extending the suspension wires so blocks NEVER collide with the beam/hook!
   if (total <= 40) {
     const cols = total <= 12 ? 4 : total <= 24 ? 5 : 6;
     const blockW = cols === 4 ? 10.5 : cols === 5 ? 8.6 : 7.2;
@@ -81,8 +100,6 @@ function getMobilePanStackGeometry(multiplier: number, isCounterActive: boolean)
     return { wireDrop, rows, blockW, blockH, gapX, gapY, cols };
   }
 
-  // For >40 blocks, the full 1:1 stack renders in TrueScaleWeightChamber below;
-  // on the mini SVG pan dish, render a clean dense 6x4 tower with tall clear wires
   return { wireDrop: 58, rows: 4, blockW: 7.2, blockH: 4.5, gapX: 1.6, gapY: 1.6, cols: 6 };
 }
 
@@ -92,7 +109,6 @@ function renderMobilePanWeights(
   isHeavier: boolean,
   wireDrop: number,
 ) {
-  // Single reference weight when not counterweighted or on the 1x side
   if (!isCounterActive || multiplier <= 1.05) {
     const isHeavyRef = isCounterActive || isHeavier;
     return (
@@ -216,6 +232,13 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
   onSelectRight,
   onSwap,
 }) => {
+  // Authored one-shot hero entrance: beam settles from 0° into true weighted tilt on load
+  const [hasEntered, setHasEntered] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setHasEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const rawLeftVal = leftItem.metrics[activeMetric];
   const rawRightVal = rightItem.metrics[activeMetric];
   const ratio = formatRatio(rawLeftVal, rawRightVal);
@@ -229,22 +252,25 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
   const effectiveLeftVal = rawLeftVal * leftMultiplier;
   const effectiveRightVal = rawRightVal * rightMultiplier;
 
-  // Smoothly animated odometer numerals
   const animLeftVal = useAnimatedNumber(effectiveLeftVal, 420);
   const animRightVal = useAnimatedNumber(effectiveRightVal, 420);
   const animFactor = useAnimatedNumber(counterActive ? 1 : ratio.factor, 420);
 
-  // True 4-decade logarithmic mapping (1x -> 0deg, 10x -> 27.5deg, 100x -> 55deg, 1000x -> 82.5deg, 10000x -> 110deg)
   const signedLog = counterActive
     ? 0
     : Math.log10(Math.max(rawRightVal, 1e-6) / Math.max(rawLeftVal, 1e-6));
 
-  // Beam tilts cleanly across 4 decades up to ±14.5deg
-  const angleDeg = Math.max(-14.5, Math.min(14.5, (signedLog / 4) * 14.5));
+  const targetAngleDeg = Math.max(-14.5, Math.min(14.5, (signedLog / 4) * 14.5));
+  const targetNeedleDeg = Math.max(-110, Math.min(110, signedLog * 27.5));
+
+  const angleDeg = hasEntered ? targetAngleDeg : 0;
+  const needleDeg = hasEntered ? targetNeedleDeg : 0;
   const angleRad = (angleDeg * Math.PI) / 180;
 
-  // Needle sweeps the full calibrated ±110deg logarithmic dial (27.5deg per order of magnitude)
-  const needleDeg = Math.max(-110, Math.min(110, signedLog * 27.5));
+  // Animated copper sweep arc on the vernier dial
+  const animNeedleDeg = useAnimatedNumber(needleDeg, 560);
+  const desktopArcPath = describeArc(590, 158, 70.5, 0, animNeedleDeg);
+  const mobileArcPath = describeArc(180, 62, 34, 0, animNeedleDeg);
 
   const cx = 590;
   const cy = 158;
@@ -258,7 +284,6 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
   const leftSource = SOURCES[leftItem.primarySourceId];
   const rightSource = SOURCES[rightItem.primarySourceId];
 
-  // Grouped options for <optgroup>
   const groupedDecisions = useMemo(
     () =>
       CATEGORIES.map((cat) => ({
@@ -269,7 +294,6 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
     [],
   );
 
-  // Calibrated logarithmic dial ticks (-110deg to +110deg, 1x / 10x / 100x / 1k / 10k)
   const dialTicks = useMemo(() => {
     const ticks: {
       x1: number;
@@ -301,7 +325,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
       const isMajor = step % 10 === 0;
       const rOuter = 75;
       const rInner = isMajor ? 61 : 68;
-      const rLabel = 50;
+      const rLabel = 49;
 
       ticks.push({
         x1: cx + rInner * Math.cos(rad),
@@ -336,13 +360,12 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
     return ticks;
   }, []);
 
-  const panW = 290;
-  const panH = 166;
+  const panW = 292;
+  const panH = 168;
   const panDrop = 50;
 
   const animatedRatioLabel = useMemo(() => {
-    if (counterActive) return '1 : 1,0';
-    if (isSame) return '1 : 1,0';
+    if (counterActive || isSame) return '1 : 1,0';
     const f = formatMultiplier(animFactor);
     return ratio.heavier === 'right' ? `1 : ${f}` : `${f} : 1`;
   }, [animFactor, counterActive, isSame, ratio.heavier]);
@@ -376,21 +399,36 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
 
   return (
     <div className="balance-canvas-wrap">
-      {/* Live Hero Ratio & Counterweight Readout Strip */}
-      <div className="hero-ratio-strip" aria-live="polite" aria-atomic="true">
+      {/* Editorial Hero Ratio Header (unboxed, equal-edge instrument readout) */}
+      <div className="hero-ratio-bar" aria-live="polite" aria-atomic="true">
         <div className="hero-ratio-readout">
           <span className="mono hero-ratio-label">
             {counterActive
-              ? 'RÓWNOWAGA SZALEK'
+              ? 'RÓWNOWAGA SZALEK · SKALA 1:1'
               : isSame
               ? 'IDENTYCZNE OBCIĄŻENIE'
-              : `STOSUNEK (${METRICS[activeMetric].shortLabel})`}
+              : `PORÓWNANIE · ${METRICS[activeMetric].shortLabel}`}
           </span>
-          <strong className="hero-ratio-number tabular">
-            {counterActive
-              ? `${formatMultiplier(ratio.factor)}× ${lighterItem.shortLabel} = 1× ${heavierItem.shortLabel}`
-              : animatedRatioLabel}
-          </strong>
+          <h1 className="hero-ratio-number tabular">
+            {counterActive ? (
+              <>
+                <span className="ratio-accent">
+                  {formatMultiplier(ratio.factor)}×
+                </span>{' '}
+                {lighterItem.shortLabel}{' '}
+                <span className="ratio-eq">=</span> 1× {heavierItem.shortLabel}
+              </>
+            ) : (
+              <>
+                <span className="ratio-accent">{animatedRatioLabel}</span>
+                {!isSame && (
+                  <span className="hero-ratio-sub">
+                    {heavierItem.shortLabel} przeważa {formatMultiplier(ratio.factor)}×
+                  </span>
+                )}
+              </>
+            )}
+          </h1>
         </div>
 
         {!isSame && (
@@ -400,7 +438,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             aria-pressed={counterActive}
             onClick={onToggleCounterbalance}
           >
-            <Scale size={14} strokeWidth={2} aria-hidden="true" />
+            <Scale size={15} strokeWidth={2} aria-hidden="true" />
             <span>
               {counterActive
                 ? 'Zdejmij odważniki (1 vs 1)'
@@ -410,41 +448,99 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
         )}
       </div>
 
-      {/* Desktop Interactive Metrology Balance SVG (role="group" preserves interactive descendants for a11y) */}
+      {/* Desktop Interactive Machined Metrology Balance SVG */}
       <svg
         className="balance-svg"
         viewBox="0 0 1180 486"
         role="group"
         aria-label={`Waga metrologiczna porównująca ${leftItem.name} oraz ${rightItem.name}`}
       >
-        {/* Subtle horizontal calibration baseline */}
+        <defs>
+          <linearGradient id="beamMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FAF8F3" />
+            <stop offset="55%" stopColor="#EAE6DC" />
+            <stop offset="100%" stopColor="#D7D2C5" />
+          </linearGradient>
+          <linearGradient id="pedestalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#262927" />
+            <stop offset="45%" stopColor="#3B403D" />
+            <stop offset="100%" stopColor="#141615" />
+          </linearGradient>
+        </defs>
+
+        {/* Engraved horizontal calibration datum line */}
         <line
-          x1="120"
+          x1="90"
           y1={cy}
-          x2="1060"
+          x2="1090"
           y2={cy}
           stroke="rgba(20, 22, 21, 0.1)"
           strokeWidth="1"
           strokeDasharray="4 6"
         />
 
-        {/* Tilting Precision Beam */}
+        {/* Machined Fulcrum Pedestal Pillar (grounds the instrument physically) */}
+        <g aria-hidden="true">
+          <path
+            d={`M ${cx - 16} ${cy + 74} L ${cx - 24} 428 L ${cx + 24} 428 L ${cx + 16} ${
+              cy + 74
+            } Z`}
+            fill="url(#pedestalGrad)"
+            stroke="#141615"
+            strokeWidth="1.2"
+          />
+          <rect
+            x={cx - 64}
+            y="428"
+            width="128"
+            height="10"
+            rx="2"
+            fill="#141615"
+          />
+          <rect
+            x={cx - 86}
+            y="438"
+            width="172"
+            height="7"
+            rx="1.5"
+            fill="#3F4441"
+            stroke="#141615"
+            strokeWidth="1"
+          />
+        </g>
+
+        {/* Tilting Machined Precision Beam */}
         <g
           className="balance-beam-group"
           style={{ transform: `rotate(${angleDeg}deg)` }}
         >
+          {/* Main machined bar */}
           <rect
-            x={cx - armLength - 12}
-            y={cy - 7}
-            width={(armLength + 12) * 2}
-            height="14"
-            rx="1.5"
-            fill="#F4F2EC"
+            x={cx - armLength - 14}
+            y={cy - 8}
+            width={(armLength + 14) * 2}
+            height="16"
+            rx="2"
+            fill="url(#beamMetal)"
             stroke="#141615"
             strokeWidth="1.6"
           />
+          {/* Engraved center groove along beam */}
+          <line
+            x1={cx - armLength + 14}
+            y1={cy}
+            x2={cx + armLength - 14}
+            y2={cy}
+            stroke="rgba(20, 22, 21, 0.22)"
+            strokeWidth="1"
+          />
+          {/* Brass pivot rivets at both ends */}
+          <circle cx={cx - armLength} cy={cy} r="3.5" fill="#A44B27" stroke="#141615" strokeWidth="1" />
+          <circle cx={cx + armLength} cy={cy} r="3.5" fill="#A44B27" stroke="#141615" strokeWidth="1" />
+
+          {/* Left end-cap hook */}
           <path
-            d={`M ${cx - armLength} ${cy + 7} L ${cx - armLength} ${cy + 18} C ${
+            d={`M ${cx - armLength} ${cy + 8} L ${cx - armLength} ${cy + 18} C ${
               cx - armLength
             } ${cy + 25}, ${cx - armLength + 9} ${cy + 25}, ${cx - armLength + 9} ${
               cy + 19
@@ -454,8 +550,9 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             strokeWidth="1.6"
             strokeLinecap="round"
           />
+          {/* Right end-cap hook */}
           <path
-            d={`M ${cx + armLength} ${cy + 7} L ${cx + armLength} ${cy + 18} C ${
+            d={`M ${cx + armLength} ${cy + 8} L ${cx + armLength} ${cy + 18} C ${
               cx + armLength
             } ${cy + 25}, ${cx + armLength - 9} ${cy + 25}, ${cx + armLength - 9} ${
               cy + 19
@@ -496,55 +593,57 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             stroke="#141615"
             strokeWidth="1.5"
           />
-          <foreignObject x={-panW / 2} y={panDrop} width={panW} height={panH}>
-            <div
-              className={`pan-foreign-card ${
-                !counterActive && ratio.heavier === 'left' ? 'heavier' : ''
-              } ${counterActive && leftMultiplier > 1 ? 'counterweighted' : ''}`}
-            >
-              <div className="pan-selector-row">
-                {leftMultiplier > 1 && (
-                  <span className="multiplier-badge mono">
-                    ×{formatMultiplier(leftMultiplier)}
-                  </span>
-                )}
-                <select
-                  aria-label="Wybierz decyzję na lewej szalce"
-                  className="pan-select"
-                  value={leftItem.id}
-                  onChange={(e) => onSelectLeft(e.target.value)}
-                >
-                  {renderGroupedOptions(false)}
-                </select>
-              </div>
-              <div className="pan-primary-value tabular">
-                {formatMetricValue(animLeftVal, activeMetric)}
-              </div>
-              <div className="pan-secondary-metrics tabular">
-                {leftMultiplier > 1 ? (
-                  renderDesktopWeightStrip(leftMultiplier)
-                ) : counterActive ? (
-                  <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
-                    <span className="weight-block is-ref" />
-                    <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
-                      1× wzorzec
-                    </span>
-                  </div>
-                ) : (
-                  getSecondarySummary(leftItem, activeMetric)
-                )}
-              </div>
-              <a
-                href={leftSource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="source-pill"
-                aria-label={`${leftSource.shortBadge} — otwórz publikację w nowej karcie`}
-                title={leftSource.citation}
+          <foreignObject x={-panW / 2} y={panDrop - 12} width={panW} height={panH + 14}>
+            <div className="pan-fo-shell">
+              {leftMultiplier > 1 && (
+                <span className="pan-floating-mult mono">
+                  ×{formatMultiplier(leftMultiplier)} odważników
+                </span>
+              )}
+              <div
+                className={`pan-foreign-card ${
+                  !counterActive && ratio.heavier === 'left' ? 'heavier' : ''
+                } ${counterActive && leftMultiplier > 1 ? 'counterweighted' : ''}`}
               >
-                <span>{leftSource.shortBadge}</span>
-                <ExternalLink size={11} strokeWidth={2} aria-hidden="true" />
-              </a>
+                <div className="pan-selector-row">
+                  <select
+                    aria-label="Wybierz decyzję na lewej szalce"
+                    className="pan-select"
+                    value={leftItem.id}
+                    onChange={(e) => onSelectLeft(e.target.value)}
+                  >
+                    {renderGroupedOptions(false)}
+                  </select>
+                </div>
+                <div className="pan-primary-value tabular">
+                  {formatMetricValue(animLeftVal, activeMetric)}
+                </div>
+                <div className="pan-secondary-metrics tabular">
+                  {leftMultiplier > 1 ? (
+                    renderDesktopWeightStrip(leftMultiplier)
+                  ) : counterActive ? (
+                    <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
+                      <span className="weight-block is-ref" />
+                      <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
+                        1× wzorzec
+                      </span>
+                    </div>
+                  ) : (
+                    getSecondarySummary(leftItem, activeMetric)
+                  )}
+                </div>
+                <a
+                  href={leftSource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-pill"
+                  aria-label={`${leftSource.shortBadge} — otwórz publikację w nowej karcie`}
+                  title={leftSource.citation}
+                >
+                  <span>{leftSource.shortBadge}</span>
+                  <ExternalLink size={11} strokeWidth={2} aria-hidden="true" />
+                </a>
+              </div>
             </div>
           </foreignObject>
         </g>
@@ -578,55 +677,57 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             stroke="#141615"
             strokeWidth="1.5"
           />
-          <foreignObject x={-panW / 2} y={panDrop} width={panW} height={panH}>
-            <div
-              className={`pan-foreign-card ${
-                !counterActive && ratio.heavier === 'right' ? 'heavier' : ''
-              } ${counterActive && rightMultiplier > 1 ? 'counterweighted' : ''}`}
-            >
-              <div className="pan-selector-row">
-                {rightMultiplier > 1 && (
-                  <span className="multiplier-badge mono">
-                    ×{formatMultiplier(rightMultiplier)}
-                  </span>
-                )}
-                <select
-                  aria-label="Wybierz decyzję na prawej szalce"
-                  className="pan-select"
-                  value={rightItem.id}
-                  onChange={(e) => onSelectRight(e.target.value)}
-                >
-                  {renderGroupedOptions(false)}
-                </select>
-              </div>
-              <div className="pan-primary-value tabular">
-                {formatMetricValue(animRightVal, activeMetric)}
-              </div>
-              <div className="pan-secondary-metrics tabular">
-                {rightMultiplier > 1 ? (
-                  renderDesktopWeightStrip(rightMultiplier)
-                ) : counterActive ? (
-                  <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
-                    <span className="weight-block is-ref" />
-                    <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
-                      1× wzorzec
-                    </span>
-                  </div>
-                ) : (
-                  getSecondarySummary(rightItem, activeMetric)
-                )}
-              </div>
-              <a
-                href={rightSource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="source-pill"
-                aria-label={`${rightSource.shortBadge} — otwórz publikację w nowej karcie`}
-                title={rightSource.citation}
+          <foreignObject x={-panW / 2} y={panDrop - 12} width={panW} height={panH + 14}>
+            <div className="pan-fo-shell">
+              {rightMultiplier > 1 && (
+                <span className="pan-floating-mult mono">
+                  ×{formatMultiplier(rightMultiplier)} odważników
+                </span>
+              )}
+              <div
+                className={`pan-foreign-card ${
+                  !counterActive && ratio.heavier === 'right' ? 'heavier' : ''
+                } ${counterActive && rightMultiplier > 1 ? 'counterweighted' : ''}`}
               >
-                <span>{rightSource.shortBadge}</span>
-                <ExternalLink size={11} strokeWidth={2} aria-hidden="true" />
-              </a>
+                <div className="pan-selector-row">
+                  <select
+                    aria-label="Wybierz decyzję na prawej szalce"
+                    className="pan-select"
+                    value={rightItem.id}
+                    onChange={(e) => onSelectRight(e.target.value)}
+                  >
+                    {renderGroupedOptions(false)}
+                  </select>
+                </div>
+                <div className="pan-primary-value tabular">
+                  {formatMetricValue(animRightVal, activeMetric)}
+                </div>
+                <div className="pan-secondary-metrics tabular">
+                  {rightMultiplier > 1 ? (
+                    renderDesktopWeightStrip(rightMultiplier)
+                  ) : counterActive ? (
+                    <div className="pan-weight-blocks" aria-label="1 odważnik referencyjny">
+                      <span className="weight-block is-ref" />
+                      <span className="mono" style={{ fontSize: '0.68rem', color: 'var(--ink-muted)' }}>
+                        1× wzorzec
+                      </span>
+                    </div>
+                  ) : (
+                    getSecondarySummary(rightItem, activeMetric)
+                  )}
+                </div>
+                <a
+                  href={rightSource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-pill"
+                  aria-label={`${rightSource.shortBadge} — otwórz publikację w nowej karcie`}
+                  title={rightSource.citation}
+                >
+                  <span>{rightSource.shortBadge}</span>
+                  <ExternalLink size={11} strokeWidth={2} aria-hidden="true" />
+                </a>
+              </div>
             </div>
           </foreignObject>
         </g>
@@ -636,19 +737,31 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
           <circle
             cx={cx}
             cy={cy}
-            r="80"
+            r="82"
             fill="#F4F2EC"
             stroke="#141615"
-            strokeWidth="1.8"
+            strokeWidth="2"
           />
           <circle
             cx={cx}
             cy={cy}
-            r="75"
+            r="76"
             fill="none"
             stroke="rgba(20, 22, 21, 0.22)"
             strokeWidth="0.75"
           />
+
+          {/* Live sweeping oxidized-copper magnitude arc */}
+          {desktopArcPath && (
+            <path
+              d={desktopArcPath}
+              fill="none"
+              stroke="rgba(164, 75, 39, 0.28)"
+              strokeWidth="9"
+              strokeLinecap="butt"
+            />
+          )}
+
           {dialTicks.map((t, idx) => (
             <g key={idx}>
               <line
@@ -675,27 +788,26 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             </g>
           ))}
 
-          {/* Copper Fulcrum Needle with Damped Spring Physics */}
+          {/* Copper Fulcrum Needle */}
           <g
             className="balance-needle-group"
             style={{ transform: `rotate(${needleDeg}deg)` }}
           >
             <polygon
-              points={`${cx - 3.4},${cy} ${cx},${cy - 63} ${cx + 3.4},${cy}`}
+              points={`${cx - 3.6},${cy} ${cx},${cy - 65} ${cx + 3.6},${cy}`}
               fill="#A44B27"
             />
             <circle
               cx={cx}
               cy={cy}
-              r="10.5"
+              r="11"
               fill="#F4F2EC"
               stroke="#A44B27"
-              strokeWidth="2.4"
+              strokeWidth="2.5"
             />
             <circle cx={cx} cy={cy} r="4.2" fill="#141615" />
           </g>
 
-          {/* Center Log Scale Caption */}
           <text
             x={cx}
             y={cy + 34}
@@ -710,10 +822,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
           </text>
           <text
             x={cx}
-            y={cy + 52}
+            y={cy + 53}
             textAnchor="middle"
             fontFamily="Archivo, sans-serif"
-            fontSize="15.5"
+            fontSize="16"
             fontWeight="800"
             fill="#141615"
           >
@@ -753,8 +865,8 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               stroke="#141615"
               strokeWidth="1.5"
             />
-            <circle cx="52" cy="62" r="2.2" fill="#141615" />
-            <circle cx="308" cy="62" r="2.2" fill="#141615" />
+            <circle cx="52" cy="62" r="2.2" fill="#A44B27" />
+            <circle cx="308" cy="62" r="2.2" fill="#A44B27" />
           </g>
 
           {/* Left Mini Pan */}
@@ -835,7 +947,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             />
           </g>
 
-          {/* Center Vernier Dial */}
+          {/* Center Vernier Dial with Live Copper Arc */}
           <g>
             <circle
               cx="180"
@@ -845,6 +957,14 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               stroke="#141615"
               strokeWidth="1.6"
             />
+            {mobileArcPath && (
+              <path
+                d={mobileArcPath}
+                fill="none"
+                stroke="rgba(164, 75, 39, 0.28)"
+                strokeWidth="5.5"
+              />
+            )}
             {mobileDialTicks.map((t, i) => (
               <line
                 key={i}
@@ -909,12 +1029,12 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 : 'is-higher'
             }`}
           >
+            {leftMultiplier > 1 && (
+              <span className="multiplier-badge mono">
+                ×{formatMultiplier(leftMultiplier)}
+              </span>
+            )}
             <div className="pan-selector-row">
-              {leftMultiplier > 1 && (
-                <span className="multiplier-badge mono">
-                  ×{formatMultiplier(leftMultiplier)}
-                </span>
-              )}
               <select
                 aria-label="Wybierz decyzję na lewej szalce"
                 className="pan-select mobile-pan-select"
@@ -939,8 +1059,8 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               className="source-pill mobile-source-pill"
               aria-label={`${leftSource.shortBadge} — otwórz publikację w nowej karcie`}
             >
-              <span>{leftSource.shortBadge}</span>
-              <ExternalLink size={10} aria-hidden="true" />
+              <span className="source-pill-text">{leftSource.shortBadge}</span>
+              <ExternalLink size={10} className="source-pill-icon" aria-hidden="true" />
             </a>
           </div>
 
@@ -955,12 +1075,12 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 : 'is-higher'
             }`}
           >
+            {rightMultiplier > 1 && (
+              <span className="multiplier-badge mono">
+                ×{formatMultiplier(rightMultiplier)}
+              </span>
+            )}
             <div className="pan-selector-row">
-              {rightMultiplier > 1 && (
-                <span className="multiplier-badge mono">
-                  ×{formatMultiplier(rightMultiplier)}
-                </span>
-              )}
               <select
                 aria-label="Wybierz decyzję na prawej szalce"
                 className="pan-select mobile-pan-select"
@@ -985,8 +1105,8 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               className="source-pill mobile-source-pill"
               aria-label={`${rightSource.shortBadge} — otwórz publikację w nowej karcie`}
             >
-              <span>{rightSource.shortBadge}</span>
-              <ExternalLink size={10} aria-hidden="true" />
+              <span className="source-pill-text">{rightSource.shortBadge}</span>
+              <ExternalLink size={10} className="source-pill-icon" aria-hidden="true" />
             </a>
           </div>
         </div>

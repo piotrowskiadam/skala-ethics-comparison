@@ -213,6 +213,10 @@ export function App() {
 
   return (
     <div>
+      <a href="#top" className="skip-link">
+        Przejdź do instrumentu SKALA
+      </a>
+
       {/* TOP INSTRUMENT BAR */}
       <header className="top-bar">
         <div className="top-bar-inner">
@@ -265,59 +269,65 @@ export function App() {
             onSwap={handleSwap}
           />
 
-          {/* Quick-Swap Greenwashing Duels & Instrument Controls */}
-          <div className="vernier-rail-section">
+          {/* Equal-Edged Instrument Preset Strip & Compact Utility Bar */}
+          <div className="preset-deck">
+            <div className="preset-deck-header">
+              <span className="mono preset-deck-label">
+                GOTOWE ZESTAWIENIA GREENWASHINGOWE
+              </span>
+              <div className="preset-deck-utils">
+                <button type="button" className="swap-inline-btn" onClick={handleSwap}>
+                  <ArrowLeftRight size={13} aria-hidden="true" />
+                  <span>Zamień (S)</span>
+                </button>
+                <button
+                  type="button"
+                  className="swap-inline-btn"
+                  onClick={handleCopyShareLink}
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check size={13} aria-hidden="true" />
+                      <span>Skopiowano!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 size={13} aria-hidden="true" />
+                      <span>Kopiuj link</span>
+                    </>
+                  )}
+                </button>
+                <a href="#skala-rzedow" className="swap-inline-btn swap-inline-link">
+                  <ArrowDown size={13} aria-hidden="true" />
+                  <span>Skala ({DECISIONS.length})</span>
+                </a>
+              </div>
+            </div>
+
             <div
-              className="specimen-rail"
+              className="preset-strip"
               role="group"
               aria-label="Gotowe pojedynki greenwashingowe"
             >
-              {DUEL_PRESETS.map((preset) => {
+              {DUEL_PRESETS.map((preset, idx) => {
                 const isCurrent =
                   activePreset?.id === preset.id && activeMetric === preset.metric;
                 return (
                   <button
                     key={preset.id}
                     type="button"
-                    className={`specimen-pill ${isCurrent ? 'active' : ''}`}
+                    className={`preset-cell ${isCurrent ? 'active' : ''}`}
                     aria-pressed={isCurrent}
                     onClick={() => handleSelectPreset(preset.id)}
                   >
-                    {preset.label}
+                    <span className="preset-cell-meta mono">
+                      <span>{String(idx + 1).padStart(2, '0')}</span>
+                      <span>{METRICS[preset.metric].label}</span>
+                    </span>
+                    <span className="preset-cell-title">{preset.label}</span>
                   </button>
                 );
               })}
-            </div>
-
-            <div className="specimen-rail-hint">
-              <button type="button" className="swap-inline-btn" onClick={handleSwap}>
-                <ArrowLeftRight size={13} aria-hidden="true" />
-                <span>Zamień szalki (S)</span>
-              </button>
-              <button
-                type="button"
-                className="swap-inline-btn"
-                onClick={handleCopyShareLink}
-              >
-                {copiedLink ? (
-                  <>
-                    <Check size={13} aria-hidden="true" />
-                    <span>Skopiowano link!</span>
-                  </>
-                ) : (
-                  <>
-                    <Link2 size={13} aria-hidden="true" />
-                    <span>Kopiuj link do pojedynku</span>
-                  </>
-                )}
-              </button>
-              <a
-                href="#skala-rzedow"
-                className="swap-inline-btn swap-inline-link"
-              >
-                <ArrowDown size={13} aria-hidden="true" />
-                <span>Pełna skala {DECISIONS.length} decyzji</span>
-              </a>
             </div>
           </div>
         </section>

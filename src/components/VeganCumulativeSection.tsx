@@ -95,11 +95,12 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
   const poore = SOURCES['poore-2018'];
 
   return (
-    <section
-      id="kumulacja-weganska"
-      className="section-block"
-      aria-labelledby="vegan-heading"
-    >
+    <div className="vegan-dark-band">
+      <section
+        id="kumulacja-weganska"
+        className="section-block vegan-section-inner"
+        aria-labelledby="vegan-heading"
+      >
       <div className="section-header">
         <div>
           <h2 id="vegan-heading" className="section-heading">
@@ -191,7 +192,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
             style={{
               margin: 0,
               fontSize: '0.8rem',
-              color: 'var(--ink-muted)',
+              color: '#a9aba6',
               lineHeight: 1.45,
             }}
           >
@@ -278,7 +279,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
               <span className="vegan-curve-title">
                 Porównanie 3 ścieżek kumulacji CO₂e (7 dni → 10 lat)
               </span>
-              <span className="mono" style={{ fontSize: '0.74rem', color: 'var(--copper)' }}>
+              <span className="mono" style={{ fontSize: '0.74rem', color: '#E07A4F' }}>
                 Aktywna: +{formatNumberPL(baseline.dailySaved.co2)} kg CO₂e / dzień
               </span>
             </div>
@@ -302,7 +303,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       y1={y}
                       x2={svgW - padR}
                       y2={y}
-                      stroke="rgba(20, 22, 21, 0.12)"
+                      stroke="rgba(236, 234, 227, 0.14)"
                       strokeDasharray="3 4"
                     />
                     <text
@@ -311,7 +312,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       textAnchor="end"
                       fontFamily="JetBrains Mono, monospace"
                       fontSize="10"
-                      fill="#5A605C"
+                      fill="#A9ABA6"
                     >
                       {Math.round(val / 1000)} t
                     </text>
@@ -336,8 +337,8 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       y1={padT + plotH}
                       x2={svgW - padR}
                       y2={endY}
-                      stroke={isSelected ? 'rgba(164, 75, 39, 0.45)' : 'rgba(20, 22, 21, 0.24)'}
-                      strokeWidth={isSelected ? '1.6' : '1.15'}
+                      stroke={isSelected ? 'rgba(224, 122, 79, 0.65)' : 'rgba(236, 234, 227, 0.28)'}
+                      strokeWidth={isSelected ? '1.8' : '1.15'}
                       strokeDasharray="4 4"
                     />
                     <text
@@ -346,7 +347,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       fontFamily="JetBrains Mono, monospace"
                       fontSize="9.5"
                       fontWeight={isSelected ? '700' : '500'}
-                      fill={isSelected ? '#A44B27' : '#5A605C'}
+                      fill={isSelected ? '#E07A4F' : '#A9ABA6'}
                     >
                       {shortName}
                     </text>
@@ -355,13 +356,13 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
               })}
 
               {/* Active accumulated copper wedge */}
-              <path d={areaPath} fill="rgba(164, 75, 39, 0.16)" />
+              <path d={areaPath} fill="rgba(224, 122, 79, 0.22)" />
               <line
                 x1={padL}
                 y1={padT + plotH}
                 x2={activeX}
                 y2={activeY}
-                stroke="#A44B27"
+                stroke="#E07A4F"
                 strokeWidth="3"
                 strokeLinecap="round"
               />
@@ -372,7 +373,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                 y1={activeY}
                 x2={activeX}
                 y2={padT + plotH}
-                stroke="#A44B27"
+                stroke="#E07A4F"
                 strokeWidth="1.2"
                 strokeDasharray="3 3"
               />
@@ -380,8 +381,8 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                 cx={activeX}
                 cy={activeY}
                 r="6"
-                fill="#F4F2EC"
-                stroke="#A44B27"
+                fill="#141615"
+                stroke="#E07A4F"
                 strokeWidth="2.8"
               />
 
@@ -391,7 +392,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                 y1={padT + plotH}
                 x2={svgW - padR}
                 y2={padT + plotH}
-                stroke="#141615"
+                stroke="#ECEAE3"
                 strokeWidth="1.5"
               />
               {milestones.map((m) => {
@@ -403,7 +404,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       y1={padT + plotH}
                       x2={mx}
                       y2={padT + plotH + 7}
-                      stroke="#141615"
+                      stroke="#ECEAE3"
                       strokeWidth="1.25"
                     />
                     <text
@@ -412,7 +413,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
                       textAnchor="middle"
                       fontFamily="JetBrains Mono, monospace"
                       fontSize="10.5"
-                      fill="#3F4441"
+                      fill="#C6C5BE"
                     >
                       {m.label}
                     </text>
@@ -423,6 +424,7 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
           </div>
         </div>
       </div>
-    </section>
+      </section>
+    </div>
   );
 };
