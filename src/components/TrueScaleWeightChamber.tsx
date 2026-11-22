@@ -17,11 +17,6 @@ function formatCount(n: number): string {
   });
 }
 
-/**
- * Renders EVERY SINGLE unit weight block at true 1:1 proportion on a HiDPI canvas
- * next to 1 solitary reference block, so 4.7x, 13.6x, 32.6x, 496x, or 1 733x
- * is physically felt by actual count and height.
- */
 export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
   lighterItem,
   heavierItem,
@@ -32,9 +27,9 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
-  // For extreme > 25,000x ratios (e.g. 100 AI prompts vs 1 yr SAD on land = 3,000,000x),
-  // group into 100x calibrated brass ingots so browser canvas height stays within GPU limits.
-  const unitScale = multiplier > 25000 ? 100 : 1;
+  // Adaptive grouping only for extreme ratios so every single block renders without canvas truncation
+  const unitScale =
+    multiplier > 100000 ? 1000 : multiplier > 12000 ? 100 : 1;
   const scaledCount = multiplier / unitScale;
   const fullBlocks = Math.floor(scaledCount);
   const fracBlock = scaledCount - fullBlocks;
@@ -46,13 +41,18 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
 
-    const draw = () => {
-      const containerW = Math.max(260, wrap.clientWidth);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let lastWidth = -1;
+    let rafId = 0;
 
-      // Adapt block size & columns to multiplier so small counts look bold & monumental,
-      // while 496x–2000x form an unmistakable towering metrology field.
-      const isCompact = containerW < 460;
+    const draw = (force = false) => {
+      const style = window.getComputedStyle(wrap);
+      const padX =
+        (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+      const innerW = Math.max(240, Math.floor(wrap.clientWidth - padX));
+      if (!force && innerW === lastWidth) return;
+      lastWidth = innerW;
+
+      const isCompact = innerW < 460;
       let cols: number;
       let blockW: number;
       let blockH: number;
@@ -81,37 +81,40 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       }
 
       const rows = Math.max(1, Math.ceil(totalSlots / cols));
-      const padTop = 18;
-      const padBottom = 18;
-      const axisGutter = isCompact ? 34 : 48;
-      const centerDivider = isCompact ? 16 : 28;
+      const padTop = 16;
+      const padBottom = 16;
+      const axisGutter = isCompact ? 34 : 46;
+      const centerDivider = isCompact ? 16 : 26;
 
       const gridW = cols * blockW + (cols - 1) * gap;
-      const singleSideW = Math.max(gridW, isCompact ? 105 : 180);
-      const logicalW = containerW;
+      const logicalW = innerW;
       const halfW = (logicalW - axisGutter - centerDivider) / 2;
 
-      // Scale block geometry gently if container is narrower than preferred gridW
-      const scaleFit = gridW > halfW - 8 ? (halfW - 8) / gridW : 1;
+      const scaleFit = gridW > halfW - 6 ? (halfW - 6) / gridW : 1;
       const bw = blockW * scaleFit;
       const bh = blockH * scaleFit;
       const g = gap * scaleFit;
       const actualGridW = cols * bw + (cols - 1) * g;
       const actualGridH = rows * bh + (rows - 1) * g;
 
-      const logicalH = Math.min(
-        4200,
-        Math.max(88, padTop + actualGridH + padBottom),
+      const logicalH = Math.max(88, Math.ceil(padTop + actualGridH + padBottom));
+
+      // Keep backing store safely below iOS Safari 16.7M px canvas cap
+      const maxPixels = 12_000_000;
+      const rawDpr = Math.min(window.devicePixelRatio || 1, 2);
+      const safeDpr = Math.min(
+        rawDpr,
+        Math.sqrt(maxPixels / Math.max(1, logicalW * logicalH)),
       );
 
-      canvas.width = Math.round(logicalW * dpr);
-      canvas.height = Math.round(logicalH * dpr);
+      canvas.width = Math.round(logicalW * safeDpr);
+      canvas.height = Math.round(logicalH * safeDpr);
       canvas.style.width = `${logicalW}px`;
       canvas.style.height = `${logicalH}px`;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(safeDpr, 0, 0, safeDpr, 0, 0);
       ctx.clearRect(0, 0, logicalW, logicalH);
 
       const leftAreaX = axisGutter;
@@ -119,7 +122,6 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       const lighterAreaX = lighterSide === 'left' ? leftAreaX : rightAreaX;
       const heavierAreaX = lighterSide === 'left' ? rightAreaX : leftAreaX;
 
-      // Vertical center hairline separating the two pans' chambers
       const midX = axisGutter + halfW + centerDivider / 2;
       ctx.strokeStyle = 'rgba(20, 22, 21, 0.22)';
       ctx.lineWidth = 1;
@@ -130,14 +132,12 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Left axis hairline (height gauge)
       ctx.strokeStyle = 'rgba(20, 22, 21, 0.25)';
       ctx.beginPath();
       ctx.moveTo(axisGutter - 6, padTop);
       ctx.lineTo(axisGutter - 6, padTop + actualGridH);
       ctx.stroke();
 
-      // Engraved row count ticks along the left gutter
       ctx.font = '500 9px "JetBrains Mono", monospace';
       ctx.fillStyle = '#5A605C';
       ctx.textAlign = 'right';
@@ -166,7 +166,6 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
         }
       }
 
-      // Draw ALL individual unit blocks on the lighter side (centered in its column)
       const startX = lighterAreaX + (halfW - actualGridW) / 2;
 
       for (let i = 0; i < totalSlots; i++) {
@@ -187,7 +186,6 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
         }
       }
 
-      // Draw ONE solitary reference block on the heavier side (exact same unit size if 1:1!)
       const refW = Math.max(bw, 10);
       const refH = Math.max(bh, 8);
       const refX = heavierAreaX + (halfW - refW) / 2;
@@ -199,25 +197,32 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       ctx.lineWidth = 1.2;
       ctx.strokeRect(refX - 2, refY - 2, refW + 4, refH + 4);
 
-      // Clean "1×" label directly under the solitary reference block
       ctx.font = '700 10px "JetBrains Mono", monospace';
       ctx.fillStyle = '#141615';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText('1×', refX + refW / 2, refY + refH + 8);
-
-      // Avoid unused var warning
-      void singleSideW;
     };
 
-    draw();
-    const ro = new ResizeObserver(draw);
+    draw(true);
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => draw(true));
+    }
+
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => draw(false));
+    });
     ro.observe(wrap);
-    return () => ro.disconnect();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
   }, [totalSlots, fullBlocks, fracBlock, hasFrac, lighterSide, unitScale]);
 
   return (
-    <div className="weight-chamber" aria-live="polite">
+    <div id="komora-odwaznikow" className="weight-chamber">
       <div className="weight-chamber-header">
         <div className="weight-chamber-title-group">
           <span className="mono weight-chamber-kicker">
@@ -234,8 +239,10 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
             ) : (
               <>
                 Skala ekstremalna ({formatCount(multiplier)}×): 1 sztabka ={' '}
-                <strong>100× {lighterItem.shortLabel}</strong> (łącznie{' '}
-                {fullBlocks.toLocaleString('pl-PL')} sztabek po 100 szt.) wobec{' '}
+                <strong>
+                  {unitScale.toLocaleString('pl-PL')}× {lighterItem.shortLabel}
+                </strong>{' '}
+                (łącznie {formatCount(scaledCount)} sztabek) wobec{' '}
                 <strong>1× {heavierItem.shortLabel}</strong>
               </>
             )}

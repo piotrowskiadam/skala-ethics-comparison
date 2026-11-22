@@ -111,6 +111,18 @@ input {
   left: 14px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* =========================================
    TOP INSTRUMENT BAR
    ========================================= */
@@ -372,15 +384,15 @@ input {
   display: block;
 }
 
-/* Damped physical spring easing on beam, fulcrum needle, and gravity-leveled pans */
+/* Damped laboratory oil-damped balance easing (transform-origin matches cy=112) */
 .balance-beam-group {
   transition: transform 820ms var(--ease-spring);
-  transform-origin: 590px 158px;
+  transform-origin: 590px 112px;
 }
 
 .balance-needle-group {
   transition: transform 880ms var(--ease-spring);
-  transform-origin: 590px 158px;
+  transform-origin: 590px 112px;
 }
 
 .balance-pan-group {
@@ -514,28 +526,393 @@ input {
   width: 100%;
 }
 
-.pan-select {
-  background-color: transparent;
+.pan-picker-trigger {
+  appearance: none;
+  background: transparent;
   border: none;
   border-bottom: 1px dashed var(--rule-light);
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--ink);
-  text-align: center;
-  text-align-last: center;
-  padding: 4px 6px;
-  min-height: 30px;
   width: 100%;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-height: 32px;
+  padding: 4px 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink);
   cursor: pointer;
+  transition: color 160ms var(--ease-expo), border-color 160ms var(--ease-expo);
 }
 
-.pan-select:hover {
-  border-bottom-color: var(--copper);
+.pan-picker-trigger:hover {
   color: var(--copper);
+  border-bottom-color: var(--copper);
+}
+
+.pan-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pan-trigger-chevron {
+  flex-shrink: 0;
+  color: var(--copper);
+}
+
+.pan-footer-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.freq-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--rule-light);
+  border-radius: 4px;
+  background: rgba(236, 234, 227, 0.7);
+}
+
+.freq-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--rule-faint);
+  padding: 3px 6px;
+  min-height: 26px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-expo), color 140ms var(--ease-expo);
+}
+
+.freq-btn:last-child {
+  border-right: none;
+}
+
+.freq-btn.active {
+  background: var(--ink);
+  color: var(--bg-card);
+}
+
+.pan-source-compact {
+  padding: 4px 8px;
+  min-height: 26px;
+  font-size: 0.65rem;
+  max-width: 122px;
+}
+
+.mobile-picker-trigger {
+  font-size: 0.8rem;
+  min-height: 36px;
+}
+
+.mobile-freq-stepper {
+  width: 100%;
+  justify-content: stretch;
+}
+
+.mobile-freq-stepper .freq-btn {
+  flex: 1;
+  min-height: 30px;
+  font-size: 0.66rem;
+}
+
+/* 4-Lens Multi-Metric Trade-off Fingerprint */
+.fingerprint-strip {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fingerprint-cell {
+  appearance: none;
+  background: var(--bg-card);
+  border: 1px solid var(--rule-light);
+  border-radius: 6px;
+  padding: 9px 12px 10px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 160ms var(--ease-expo), background-color 160ms var(--ease-expo),
+    transform 140ms var(--ease-expo);
+}
+
+.fingerprint-cell:hover {
+  border-color: var(--copper);
+  transform: translateY(-1px);
+}
+
+.fingerprint-cell.active {
+  border: 1.5px solid var(--copper);
+  background: var(--copper-tint);
+}
+
+.fingerprint-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.fingerprint-metric {
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+}
+
+.fingerprint-ratio {
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.fingerprint-cell.active .fingerprint-ratio {
+  color: var(--copper);
+}
+
+.fingerprint-bar {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  background: rgba(20, 22, 21, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fingerprint-bar-l,
+.fingerprint-bar-r {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: #5a605c;
+  transition: transform 420ms var(--ease-expo);
+}
+
+.fingerprint-bar-l {
+  left: 0;
+  transform-origin: left center;
+}
+
+.fingerprint-bar-r {
+  right: 0;
+  transform-origin: right center;
+}
+
+.fingerprint-bar-l.is-copper,
+.fingerprint-bar-r.is-copper {
+  background: var(--copper);
+}
+
+/* Engraved Specimen Picker Modal */
+.picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(20, 22, 21, 0.52);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.picker-sheet {
+  width: 100%;
+  max-width: 640px;
+  max-height: min(82vh, 680px);
+  background: var(--bg-enamel);
+  border: 2px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 22px 48px rgba(20, 22, 21, 0.28);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1.5px solid var(--rule);
+  background: var(--bg-card);
+}
+
+.picker-kicker {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--copper);
+  margin-bottom: 4px;
+}
+
+.picker-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.picker-close-btn {
+  appearance: none;
+  background: transparent;
+  border: 1.5px solid var(--rule);
+  border-radius: 6px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background-color 140ms var(--ease-expo), color 140ms var(--ease-expo);
+}
+
+.picker-close-btn:hover {
+  background: var(--ink);
+  color: var(--bg-card);
+}
+
+.picker-search-wrap {
+  position: relative;
+  padding: 12px 20px 8px;
+}
+
+.picker-search-icon {
+  position: absolute;
+  left: 32px;
+  top: 50%;
+  transform: translateY(-35%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+
+.picker-search-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px 10px 38px;
+  font-size: 1rem; /* >=16px prevents iOS Safari auto-zoom */
+  background: var(--bg-card);
+  border: 1.5px solid var(--rule);
+  border-radius: 6px;
+  color: var(--ink);
+}
+
+.picker-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 20px 12px;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+.picker-list {
+  overflow-y: auto;
+  padding: 8px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.picker-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.picker-row {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--rule-faint);
+  border-radius: 6px;
+  padding: 11px 14px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-expo), background-color 140ms var(--ease-expo);
+}
+
+.picker-row:hover {
+  border-color: var(--copper);
+  background: var(--bg-card-hover);
+}
+
+.picker-row.is-current {
+  border: 1.5px solid var(--copper);
+  background: var(--copper-tint);
+}
+
+.picker-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.picker-row-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.picker-row-meta {
+  font-size: 0.71rem;
+  color: var(--ink-muted);
+}
+
+.picker-row-value {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--copper);
+}
+
+.picker-state-tag {
+  font-size: 0.62rem;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--copper);
+  color: var(--bg-card);
+}
+
+.picker-state-tag.is-muted {
+  background: rgba(20, 22, 21, 0.14);
+  color: var(--ink-secondary);
+}
+
+.vegan-scrub-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: ew-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.vegan-scrub-svg.is-scrubbing {
+  cursor: grabbing;
 }
 
 .pan-primary-value {
@@ -618,7 +995,7 @@ input {
 
 .mobile-pan-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: stretch;
   padding-bottom: 6px;
@@ -756,13 +1133,26 @@ input {
   gap: 8px;
 }
 
+.preset-strip-shell {
+  position: relative;
+}
+
 .preset-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   border: 1.5px solid var(--rule);
   border-radius: 7px;
   background: var(--bg-card);
-  overflow: hidden;
+}
+
+.preset-cell:first-child {
+  border-top-left-radius: 5.5px;
+  border-bottom-left-radius: 5.5px;
+}
+
+.preset-cell:last-child {
+  border-top-right-radius: 5.5px;
+  border-bottom-right-radius: 5.5px;
 }
 
 .preset-cell {
@@ -1073,6 +1463,7 @@ input {
   margin: 0 auto;
   padding: 56px 28px;
   border-bottom: 1.5px solid var(--rule);
+  scroll-margin-top: 72px;
 }
 
 .section-header {
@@ -1822,6 +2213,53 @@ input {
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    padding-right: 24px;
+  }
+
+  .preset-strip-shell::after {
+    content: '';
+    position: absolute;
+    top: 1.5px;
+    bottom: 1.5px;
+    right: 1.5px;
+    width: 28px;
+    border-radius: 0 5.5px 5.5px 0;
+    background: linear-gradient(to right, rgba(244, 242, 236, 0), var(--bg-card));
+    pointer-events: none;
+  }
+
+  .hide-on-mobile {
+    display: none;
+  }
+
+  .fingerprint-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .horizon-pills-wrap {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .horizon-pills-wrap .horizon-pill {
+    flex: 1 1 calc(33% - 6px);
+    border-right: 1px solid rgba(236, 234, 227, 0.22);
+    border-radius: 5px !important;
+  }
+
+  .segmented-control {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .segmented-btn {
+    flex: 1 1 auto;
+    font-size: 0.74rem;
+    padding: 9px 10px;
+  }
+
+  .section-block {
+    scroll-margin-top: 112px;
   }
 
   .preset-strip::-webkit-scrollbar {

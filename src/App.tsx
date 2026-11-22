@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowLeftRight,
   BookOpen,
   Check,
   ChevronDown,
+  Download,
   ExternalLink,
   Link2,
 } from 'lucide-react';
@@ -23,9 +24,11 @@ import {
   getDecisionById,
 } from './data/evidence';
 import { MetrologyBalance } from './components/MetrologyBalance';
+import { SpecimenPickerModal } from './components/SpecimenPickerModal';
 import { UnifiedScaleSection } from './components/UnifiedScaleSection';
 import { VeganCumulativeSection } from './components/VeganCumulativeSection';
 import { SourcesLedgerSection } from './components/SourcesLedgerSection';
+import { downloadMetrologyShareCard } from './utils/exportShareCard';
 
 const LEDGER_HORIZONS = [
   { label: '30 dni', days: 30 },
@@ -35,19 +38,36 @@ const LEDGER_HORIZONS = [
 
 const VALID_IDS = new Set(DECISIONS.map((d) => d.id));
 const VALID_METRICS = new Set<MetricKey>(METRIC_ORDER);
+const VALID_FREQS = new Set([1, 52, 365]);
 
-function readInitialParams(): { left: string; right: string; metric: MetricKey } {
+function readInitialParams(): {
+  left: string;
+  right: string;
+  metric: MetricKey;
+  leftFreq: number;
+  rightFreq: number;
+} {
   if (typeof window === 'undefined') {
-    return { left: 'parcel-pl', right: 'parcel-china-air', metric: 'co2' };
+    return {
+      left: 'parcel-pl',
+      right: 'parcel-china-air',
+      metric: 'co2',
+      leftFreq: 1,
+      rightFreq: 1,
+    };
   }
   const params = new URLSearchParams(window.location.search);
   const l = params.get('l');
   const r = params.get('r');
   const m = params.get('m') as MetricKey | null;
+  const lf = Number(params.get('lf'));
+  const rf = Number(params.get('rf'));
   return {
     left: l && VALID_IDS.has(l) ? l : 'parcel-pl',
     right: r && VALID_IDS.has(r) ? r : 'parcel-china-air',
     metric: m && VALID_METRICS.has(m) ? m : 'co2',
+    leftFreq: VALID_FREQS.has(lf) ? lf : 1,
+    rightFreq: VALID_FREQS.has(rf) ? rf : 1,
   };
 }
 
@@ -56,26 +76,43 @@ export function App() {
   const [activeMetric, setActiveMetric] = useState<MetricKey>(initial.metric);
   const [leftId, setLeftId] = useState<string>(initial.left);
   const [rightId, setRightId] = useState<string>(initial.right);
+  const [leftFreq, setLeftFreq] = useState<number>(initial.leftFreq);
+  const [rightFreq, setRightFreq] = useState<number>(initial.rightFreq);
   const [isCounterbalanced, setIsCounterbalanced] = useState<boolean>(false);
+  const [pickerSide, setPickerSide] = useState<'left' | 'right' | null>(null);
   const [veganBaselineId, setVeganBaselineId] =
     useState<DietBaseline['id']>('medium-meat');
   const [veganDays, setVeganDays] = useState<number>(365);
   const [showMethodology, setShowMethodology] = useState<boolean>(false);
-  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
 
-  // Sync active comparison with URL query params for instant sharing
+  const sourceCount = useMemo(() => Object.keys(SOURCES).length, []);
+
+  // Sync active comparison & habit frequencies with URL query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('l', leftId);
     params.set('r', rightId);
     params.set('m', activeMetric);
+    if (leftFreq > 1) params.set('lf', String(leftFreq));
+    else params.delete('lf');
+    if (rightFreq > 1) params.set('rf', String(rightFreq));
+    else params.delete('rf');
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
     window.history.replaceState(null, '', nextUrl);
-  }, [leftId, rightId, activeMetric]);
+  }, [leftId, rightId, activeMetric, leftFreq, rightFreq]);
+
+  const handleSwap = useCallback(() => {
+    setLeftId(rightId);
+    setRightId(leftId);
+    setLeftFreq(rightFreq);
+    setRightFreq(leftFreq);
+  }, [leftId, rightId, leftFreq, rightFreq]);
 
   // Keyboard accelerators: 1-4 switch metric, S swaps pans, B toggles counterbalance
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (pickerSide) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -91,47 +128,46 @@ export function App() {
       else if (e.key === '2') setActiveMetric('water');
       else if (e.key === '3') setActiveMetric('land');
       else if (e.key === '4') setActiveMetric('energy');
-      else if (e.key.toLowerCase() === 's') {
-        setLeftId((prevL) => {
-          setRightId(prevL);
-          return rightId;
-        });
-      } else if (e.key.toLowerCase() === 'b') {
-        setIsCounterbalanced((prev) => !prev);
-      }
+      else if (e.key.toLowerCase() === 's') handleSwap();
+      else if (e.key.toLowerCase() === 'b') setIsCounterbalanced((prev) => !prev);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [rightId]);
+  }, [handleSwap, pickerSide]);
 
   const leftItem = getDecisionById(leftId);
   const rightItem = getDecisionById(rightId);
 
   const activePreset = useMemo(
     () =>
-      DUEL_PRESETS.find(
-        (p) =>
-          (p.leftId === leftId && p.rightId === rightId) ||
-          (p.leftId === rightId && p.rightId === leftId),
-      ) ?? null,
-    [leftId, rightId],
+      leftFreq === 1 && rightFreq === 1
+        ? DUEL_PRESETS.find(
+            (p) =>
+              (p.leftId === leftId && p.rightId === rightId) ||
+              (p.leftId === rightId && p.rightId === leftId),
+          ) ?? null
+        : null,
+    [leftId, rightId, leftFreq, rightFreq],
   );
 
-  const ratio = formatRatio(
-    leftItem.metrics[activeMetric],
-    rightItem.metrics[activeMetric],
-  );
+  const leftVal = leftItem.metrics[activeMetric] * leftFreq;
+  const rightVal = rightItem.metrics[activeMetric] * rightFreq;
+  const ratio = formatRatio(leftVal, rightVal);
 
   const heavierItem = ratio.heavier === 'left' ? leftItem : rightItem;
   const lighterItem = ratio.heavier === 'left' ? rightItem : leftItem;
+  const heavierFreq = ratio.heavier === 'left' ? leftFreq : rightFreq;
+  const lighterFreq = ratio.heavier === 'left' ? rightFreq : leftFreq;
+  const heavierVal = ratio.heavier === 'left' ? leftVal : rightVal;
+  const lighterVal = ratio.heavier === 'left' ? rightVal : leftVal;
 
   const contextCopy = useMemo(() => {
-    if (leftItem.id === rightItem.id || ratio.heavier === 'equal') {
+    if (ratio.heavier === 'equal') {
       return {
         text: `Obie szalki ważą identyczne obciążenie (${formatMetricValue(
-          leftItem.metrics[activeMetric],
+          leftVal,
           activeMetric,
-        )}). Wybierz inną decyzję na jednej z szalek lub kliknij gotowy pojedynek, aby zmierzyć różnicę rzędów wielkości.`,
+        )}). Wybierz inną decyzję lub częstotliwość nawyku, aby zmierzyć różnicę rzędów wielkości.`,
         source: SOURCES[leftItem.primarySourceId],
       };
     }
@@ -145,17 +181,28 @@ export function App() {
       ratio.factor >= 100
         ? Math.round(ratio.factor).toLocaleString('pl-PL')
         : ratio.factor.toLocaleString('pl-PL', { maximumFractionDigits: 1 });
+    const hPrefix = heavierFreq > 1 ? `${heavierFreq}× ` : '';
+    const lPrefix = lighterFreq > 1 ? `${lighterFreq}× ` : '';
     return {
-      text: `${heavierItem.name} obciąża wymiar „${METRICS[activeMetric].shortLabel}” ok. ${factorStr}× mocniej niż ${lighterItem.name} (${formatMetricValue(
-        heavierItem.metrics[activeMetric],
+      text: `${hPrefix}${heavierItem.name} obciąża wymiar „${METRICS[activeMetric].shortLabel}” ok. ${factorStr}× mocniej niż ${lPrefix}${lighterItem.name} (${formatMetricValue(
+        heavierVal,
         activeMetric,
-      )} vs ${formatMetricValue(
-        lighterItem.metrics[activeMetric],
-        activeMetric,
-      )}). ${heavierItem.greenwashingNote}`,
+      )} vs ${formatMetricValue(lighterVal, activeMetric)}). ${heavierItem.greenwashingNote}`,
       source: SOURCES[heavierItem.primarySourceId],
     };
-  }, [activePreset, activeMetric, heavierItem, lighterItem, leftItem, rightItem, ratio]);
+  }, [
+    activePreset,
+    activeMetric,
+    heavierItem,
+    lighterItem,
+    heavierFreq,
+    lighterFreq,
+    heavierVal,
+    lighterVal,
+    leftItem,
+    leftVal,
+    ratio,
+  ]);
 
   const veganBaseline =
     VEGAN_BASELINES.find((b) => b.id === veganBaselineId) ?? VEGAN_BASELINES[0];
@@ -164,7 +211,6 @@ export function App() {
   const veganWater = veganBaseline.dailySaved.water * veganDays;
   const veganLand = veganBaseline.dailySaved.land * veganDays;
 
-  // Logarithmic time bar (7d -> 10y) matching the calibrated time ticks below
   const ledgerBarPct = Math.max(
     6,
     Math.min(
@@ -190,25 +236,33 @@ export function App() {
     if (!preset) return;
     setLeftId(preset.leftId);
     setRightId(preset.rightId);
+    setLeftFreq(1);
+    setRightFreq(1);
     setActiveMetric(preset.metric);
     setIsCounterbalanced(false);
   };
 
-  const handleSwap = () => {
-    setLeftId(rightId);
-    setRightId(leftId);
-  };
-
   const handleCopyShareLink = async () => {
     try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      window.setTimeout(() => setCopiedLink(false), 2200);
+      setCopyState('copied');
+      window.setTimeout(() => setCopyState('idle'), 2200);
     } catch {
-      // Fallback if clipboard API unavailable
-      setCopiedLink(true);
-      window.setTimeout(() => setCopiedLink(false), 2200);
+      setCopyState('error');
+      window.setTimeout(() => setCopyState('idle'), 2600);
     }
+  };
+
+  const handleDownloadPng = () => {
+    downloadMetrologyShareCard({
+      leftItem,
+      rightItem,
+      leftFreq,
+      rightFreq,
+      activeMetric,
+      verdictText: contextCopy.text,
+    });
   };
 
   return (
@@ -249,7 +303,7 @@ export function App() {
           <div className="top-bar-actions">
             <a href="#baza-badan" className="outline-btn">
               <BookOpen size={14} strokeWidth={2} aria-hidden="true" />
-              <span>Baza badań LCA</span>
+              <span>Źródła ({sourceCount})</span>
             </a>
           </div>
         </div>
@@ -261,22 +315,36 @@ export function App() {
           <MetrologyBalance
             leftItem={leftItem}
             rightItem={rightItem}
+            leftFreq={leftFreq}
+            rightFreq={rightFreq}
             activeMetric={activeMetric}
             isCounterbalanced={isCounterbalanced}
+            onChangeMetric={setActiveMetric}
             onToggleCounterbalance={() => setIsCounterbalanced((prev) => !prev)}
-            onSelectLeft={handleSelectLeft}
-            onSelectRight={handleSelectRight}
+            onOpenPicker={setPickerSide}
+            onChangeLeftFreq={(f) => {
+              setLeftFreq(f);
+              setIsCounterbalanced(false);
+            }}
+            onChangeRightFreq={(f) => {
+              setRightFreq(f);
+              setIsCounterbalanced(false);
+            }}
             onSwap={handleSwap}
           />
 
-          {/* Equal-Edged Instrument Preset Strip & Compact Utility Bar */}
+          {/* Equal-Edged Instrument Preset Strip & Utility Bar */}
           <div className="preset-deck">
             <div className="preset-deck-header">
               <span className="mono preset-deck-label">
-                GOTOWE ZESTAWIENIA GREENWASHINGOWE
+                ZESTAWIENIA KONTROLNE · MIT VS SKALA
               </span>
               <div className="preset-deck-utils">
-                <button type="button" className="swap-inline-btn" onClick={handleSwap}>
+                <button
+                  type="button"
+                  className="swap-inline-btn hide-on-mobile"
+                  onClick={handleSwap}
+                >
                   <ArrowLeftRight size={13} aria-hidden="true" />
                   <span>Zamień (S)</span>
                 </button>
@@ -285,10 +353,15 @@ export function App() {
                   className="swap-inline-btn"
                   onClick={handleCopyShareLink}
                 >
-                  {copiedLink ? (
+                  {copyState === 'copied' ? (
                     <>
                       <Check size={13} aria-hidden="true" />
-                      <span>Skopiowano!</span>
+                      <span>Skopiowano link!</span>
+                    </>
+                  ) : copyState === 'error' ? (
+                    <>
+                      <Link2 size={13} aria-hidden="true" />
+                      <span>Skopiuj z paska URL</span>
                     </>
                   ) : (
                     <>
@@ -297,6 +370,14 @@ export function App() {
                     </>
                   )}
                 </button>
+                <button
+                  type="button"
+                  className="swap-inline-btn"
+                  onClick={handleDownloadPng}
+                >
+                  <Download size={13} aria-hidden="true" />
+                  <span>Karta PNG</span>
+                </button>
                 <a href="#skala-rzedow" className="swap-inline-btn swap-inline-link">
                   <ArrowDown size={13} aria-hidden="true" />
                   <span>Skala ({DECISIONS.length})</span>
@@ -304,30 +385,32 @@ export function App() {
               </div>
             </div>
 
-            <div
-              className="preset-strip"
-              role="group"
-              aria-label="Gotowe pojedynki greenwashingowe"
-            >
-              {DUEL_PRESETS.map((preset, idx) => {
-                const isCurrent =
-                  activePreset?.id === preset.id && activeMetric === preset.metric;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={`preset-cell ${isCurrent ? 'active' : ''}`}
-                    aria-pressed={isCurrent}
-                    onClick={() => handleSelectPreset(preset.id)}
-                  >
-                    <span className="preset-cell-meta mono">
-                      <span>{String(idx + 1).padStart(2, '0')}</span>
-                      <span>{METRICS[preset.metric].label}</span>
-                    </span>
-                    <span className="preset-cell-title">{preset.label}</span>
-                  </button>
-                );
-              })}
+            <div className="preset-strip-shell">
+              <div
+                className="preset-strip"
+                role="group"
+                aria-label="Gotowe zestawienia kontrolne"
+              >
+                {DUEL_PRESETS.map((preset, idx) => {
+                  const isCurrent =
+                    activePreset?.id === preset.id && activeMetric === preset.metric;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`preset-cell ${isCurrent ? 'active' : ''}`}
+                      aria-pressed={isCurrent}
+                      onClick={() => handleSelectPreset(preset.id)}
+                    >
+                      <span className="preset-cell-meta mono">
+                        <span>{String(idx + 1).padStart(2, '0')}</span>
+                        <span>{METRICS[preset.metric].label}</span>
+                      </span>
+                      <span className="preset-cell-title">{preset.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
@@ -338,8 +421,7 @@ export function App() {
           aria-label="Werdykt etyczny i kumulacja diety wegańskiej"
         >
           <div className="calibration-ledger-inner">
-            {/* Left Cell: Ethical & Greenwashing Context */}
-            <div className="ledger-cell" aria-live="polite">
+            <div className="ledger-cell">
               <h2 className="ledger-title">
                 <span>KONTEKST ETYCZNY I GREENWASHING</span>
               </h2>
@@ -371,9 +453,8 @@ export function App() {
               </div>
             </div>
 
-            {/* Right Cell: Cumulative Vegan Diet Bar with True Time Scale */}
             <div className="ledger-cell">
-              <div className="ledger-title">
+              <h2 className="ledger-title">
                 <span>
                   KUMULACJA: DIETA WEGAŃSKA (
                   {veganDays === 365
@@ -398,7 +479,7 @@ export function App() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </h2>
 
               <div className="copper-bar-track" aria-hidden="true">
                 <div
@@ -407,7 +488,6 @@ export function App() {
                 />
               </div>
 
-              {/* Calibrated Logarithmic Time Scale under Copper Bar (7d -> 10y) */}
               <div className="time-scale-ticks mono" aria-hidden="true">
                 <span>7 dni</span>
                 <span>30 dni</span>
@@ -433,7 +513,6 @@ export function App() {
             </div>
           </div>
 
-          {/* Expandable Methodological Assumptions & Ethical Context for BOTH Pans */}
           {showMethodology && (
             <div className="methodology-drawer">
               <div className="methodology-drawer-inner">
@@ -443,7 +522,7 @@ export function App() {
                     <span className="mono">{leftItem.unit}</span>
                   </div>
                   <p className="methodology-text">
-                    <strong>Założenia LCA:</strong> {leftItem.assumptions}
+                    <strong>Założenia LCA (ocena cyklu życia):</strong> {leftItem.assumptions}
                   </p>
                   <p className="methodology-text">
                     <strong>Kontekst etyczny:</strong> {leftItem.ethicalContext}
@@ -456,7 +535,7 @@ export function App() {
                     <span className="mono">{rightItem.unit}</span>
                   </div>
                   <p className="methodology-text">
-                    <strong>Założenia LCA:</strong> {rightItem.assumptions}
+                    <strong>Założenia LCA (ocena cyklu życia):</strong> {rightItem.assumptions}
                   </p>
                   <p className="methodology-text">
                     <strong>Kontekst etyczny:</strong> {rightItem.ethicalContext}
@@ -476,7 +555,7 @@ export function App() {
           onAssignRight={handleSelectRight}
         />
 
-        {/* SECTION 3: DEEP-DIVE VEGAN DIET CUMULATIVE IMPACT */}
+        {/* SECTION 3: DEEP-DIVE VEGAN DIET CUMULATIVE IMPACT (DARK GRAPHITE BAND) */}
         <VeganCumulativeSection
           baselineId={veganBaselineId}
           days={veganDays}
@@ -491,10 +570,24 @@ export function App() {
       <footer className="site-footer">
         <span>SKALA · INSTRUMENT METROLOGICZNY WPŁYWU ŚRODOWISKOWEGO I ETYKI</span>
         <span>
-          Skróty klawiszowe: 1–4 wymiary · S zamień szalki · B wyrównaj wagę · Dane LCA
-          2011–2025
+          Skróty: 1–4 wymiary · S zamień · B wyrównaj wagę · LCA = Life Cycle Assessment
         </span>
       </footer>
+
+      {/* Custom Engraved Specimen Picker Modal */}
+      {pickerSide && (
+        <SpecimenPickerModal
+          side={pickerSide}
+          currentId={pickerSide === 'left' ? leftId : rightId}
+          otherId={pickerSide === 'left' ? rightId : leftId}
+          activeMetric={activeMetric}
+          onSelect={(id) => {
+            if (pickerSide === 'left') handleSelectLeft(id);
+            else handleSelectRight(id);
+          }}
+          onClose={() => setPickerSide(null)}
+        />
+      )}
     </div>
   );
 }
