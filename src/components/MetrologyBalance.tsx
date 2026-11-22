@@ -130,9 +130,7 @@ function renderMobilePanWeights(
           width={isHeavyRef ? 28 : 16}
           height={isHeavyRef ? 13 : 7}
           rx="1.5"
-          fill={isHeavyRef ? '#A44B27' : '#3F4441'}
-          stroke="#141615"
-          strokeWidth="0.7"
+          fill={isHeavyRef ? '#DC2626' : '#64748B'}
         />
       </g>
     );
@@ -170,9 +168,7 @@ function renderMobilePanWeights(
               width={block.w}
               height={geom.blockH}
               rx="1.1"
-              fill={block.isFrac ? '#C97B57' : '#A44B27'}
-              stroke="#141615"
-              strokeWidth="0.6"
+              fill={block.isFrac ? '#60A5FA' : '#1D4ED8'}
             />
           );
         });
@@ -455,14 +451,14 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
       >
         <defs>
           <linearGradient id="beamMetal" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FAF8F3" />
-            <stop offset="55%" stopColor="#EAE6DC" />
-            <stop offset="100%" stopColor="#D7D2C5" />
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="55%" stopColor="#F1F5F9" />
+            <stop offset="100%" stopColor="#E2E8F0" />
           </linearGradient>
           <linearGradient id="pedestalGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#262927" />
-            <stop offset="45%" stopColor="#3B403D" />
-            <stop offset="100%" stopColor="#141615" />
+            <stop offset="0%" stopColor="#1E293B" />
+            <stop offset="50%" stopColor="#334155" />
+            <stop offset="100%" stopColor="#0F172A" />
           </linearGradient>
         </defs>
 
@@ -743,15 +739,15 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
 
         {/* Center Calibrated Logarithmic Vernier Fulcrum Dial */}
         <g aria-hidden="true">
-          <circle cx={cx} cy={cy} r="82" fill="#F4F2EC" stroke="#141615" strokeWidth="2" />
-          <circle cx={cx} cy={cy} r="76" fill="none" stroke="rgba(20, 22, 21, 0.22)" strokeWidth="0.75" />
+          <circle cx={cx} cy={cy} r="82" fill="#FFFFFF" stroke="#0E1116" strokeWidth="1.8" />
+          <circle cx={cx} cy={cy} r="76" fill="none" stroke="#E2E8F0" strokeWidth="1" />
 
           {desktopArcPath && (
             <path
               d={desktopArcPath}
               fill="none"
-              stroke="rgba(164, 75, 39, 0.28)"
-              strokeWidth="9"
+              stroke="rgba(29, 78, 216, 0.22)"
+              strokeWidth="10"
               strokeLinecap="butt"
             />
           )}
@@ -763,7 +759,7 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                 y1={t.y1}
                 x2={t.x2}
                 y2={t.y2}
-                stroke={t.label === '1×' ? '#A44B27' : '#141615'}
+                stroke={t.label === '1×' ? '#1D4ED8' : '#334155'}
                 strokeWidth={t.isMajor ? '1.4' : '0.75'}
               />
               {t.label && t.lx !== undefined && t.ly !== undefined && (
@@ -771,10 +767,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
                   x={t.lx}
                   y={t.ly + 3}
                   textAnchor="middle"
-                  fontFamily="JetBrains Mono, monospace"
+                  fontFamily="Hanken Grotesk, sans-serif"
                   fontSize="8.5"
-                  fontWeight={t.label === '1×' ? '700' : '500'}
-                  fill={t.label === '1×' ? '#A44B27' : '#5A605C'}
+                  fontWeight={t.label === '1×' ? '700' : '600'}
+                  fill={t.label === '1×' ? '#1D4ED8' : '#64748B'}
                 >
                   {t.label}
                 </text>
@@ -786,20 +782,20 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             className="balance-needle-group"
             style={{ transform: `rotate(${needleDeg}deg)` }}
           >
-            <polygon points={`${cx - 3.6},${cy} ${cx},${cy - 65} ${cx + 3.6},${cy}`} fill="#A44B27" />
-            <circle cx={cx} cy={cy} r="11" fill="#F4F2EC" stroke="#A44B27" strokeWidth="2.5" />
-            <circle cx={cx} cy={cy} r="4.2" fill="#141615" />
+            <polygon points={`${cx - 3.6},${cy} ${cx},${cy - 65} ${cx + 3.6},${cy}`} fill="#1D4ED8" />
+            <circle cx={cx} cy={cy} r="11" fill="#FFFFFF" stroke="#1D4ED8" strokeWidth="2.5" />
+            <circle cx={cx} cy={cy} r="4" fill="#0E1116" />
           </g>
 
           <text
             x={cx}
             y={cy + 34}
             textAnchor="middle"
-            fontFamily="JetBrains Mono, monospace"
+            fontFamily="Hanken Grotesk, sans-serif"
             fontSize="9.5"
-            fontWeight="500"
+            fontWeight="600"
             letterSpacing="0.06em"
-            fill="#5A605C"
+            fill="#64748B"
           >
             {counterActive ? 'WYRÓWNANO' : 'SKALA LOG'}
           </text>
@@ -807,10 +803,10 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             x={cx}
             y={cy + 53}
             textAnchor="middle"
-            fontFamily="Archivo, sans-serif"
-            fontSize="16"
+            fontFamily="Bricolage Grotesque, sans-serif"
+            fontSize="16.5"
             fontWeight="800"
-            fill="#141615"
+            fill="#0E1116"
           >
             {animatedRatioLabel}
           </text>
@@ -825,14 +821,14 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
             y1="62"
             x2="342"
             y2="62"
-            stroke="rgba(20, 22, 21, 0.1)"
+            stroke="#E2E8F0"
             strokeWidth="1"
             strokeDasharray="3 5"
           />
           <g className="mobile-beam-group" style={{ transform: `rotate(${angleDeg}deg)` }}>
-            <rect x="44" y="57.5" width="272" height="9" rx="1.5" fill="#F4F2EC" stroke="#141615" strokeWidth="1.5" />
-            <circle cx="52" cy="62" r="2.2" fill="#A44B27" />
-            <circle cx="308" cy="62" r="2.2" fill="#A44B27" />
+            <rect x="44" y="57.5" width="272" height="9" rx="2" fill="#F1F5F9" stroke="#0E1116" strokeWidth="1.4" />
+            <circle cx="52" cy="62" r="2.2" fill="#1D4ED8" />
+            <circle cx="308" cy="62" r="2.2" fill="#1D4ED8" />
           </g>
 
           <g
@@ -843,14 +839,14 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-28" y2={mobileWireDrop} stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="28" y2={mobileWireDrop} stroke="#141615" strokeWidth="1.25" />
+            <line x1="0" y1="5" x2="-28" y2={mobileWireDrop} stroke="#334155" strokeWidth="1.2" />
+            <line x1="0" y1="5" x2="28" y2={mobileWireDrop} stroke="#334155" strokeWidth="1.2" />
             {renderMobilePanWeights(leftMultiplier, counterActive, ratio.heavier === 'left', mobileWireDrop)}
             <path
               d={`M -32 ${mobileWireDrop} Q 0 ${mobileWireDrop + 12} 32 ${mobileWireDrop} Z`}
-              fill={!counterActive && ratio.heavier === 'left' ? '#141615' : '#ECEAE3'}
-              stroke="#141615"
-              strokeWidth="1.4"
+              fill={!counterActive && ratio.heavier === 'left' ? '#0E1116' : '#F1F5F9'}
+              stroke="#0E1116"
+              strokeWidth="1.3"
             />
           </g>
 
@@ -862,34 +858,34 @@ export const MetrologyBalance: React.FC<MetrologyBalanceProps> = ({
               }px)`,
             }}
           >
-            <line x1="0" y1="5" x2="-28" y2={mobileWireDrop} stroke="#141615" strokeWidth="1.25" />
-            <line x1="0" y1="5" x2="28" y2={mobileWireDrop} stroke="#141615" strokeWidth="1.25" />
+            <line x1="0" y1="5" x2="-28" y2={mobileWireDrop} stroke="#334155" strokeWidth="1.2" />
+            <line x1="0" y1="5" x2="28" y2={mobileWireDrop} stroke="#334155" strokeWidth="1.2" />
             {renderMobilePanWeights(rightMultiplier, counterActive, ratio.heavier === 'right', mobileWireDrop)}
             <path
               d={`M -32 ${mobileWireDrop} Q 0 ${mobileWireDrop + 12} 32 ${mobileWireDrop} Z`}
-              fill={!counterActive && ratio.heavier === 'right' ? '#141615' : '#ECEAE3'}
-              stroke="#141615"
-              strokeWidth="1.4"
+              fill={!counterActive && ratio.heavier === 'right' ? '#0E1116' : '#F1F5F9'}
+              stroke="#0E1116"
+              strokeWidth="1.3"
             />
           </g>
 
           <g>
-            <circle cx="180" cy="62" r="39" fill="#F4F2EC" stroke="#141615" strokeWidth="1.6" />
+            <circle cx="180" cy="62" r="39" fill="#FFFFFF" stroke="#0E1116" strokeWidth="1.6" />
             {mobileArcPath && (
-              <path d={mobileArcPath} fill="none" stroke="rgba(164, 75, 39, 0.28)" strokeWidth="5.5" />
+              <path d={mobileArcPath} fill="none" stroke="rgba(29, 78, 216, 0.22)" strokeWidth="5.5" />
             )}
             {mobileDialTicks.map((t, i) => (
-              <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#141615" strokeWidth={t.isMajor ? 1.2 : 0.7} />
+              <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="#334155" strokeWidth={t.isMajor ? 1.2 : 0.7} />
             ))}
             <g className="mobile-needle-group" style={{ transform: `rotate(${needleDeg}deg)` }}>
-              <polygon points="178,62 180,30 182,62" fill="#A44B27" />
-              <circle cx="180" cy="62" r="6" fill="#F4F2EC" stroke="#A44B27" strokeWidth="2" />
-              <circle cx="180" cy="62" r="2.4" fill="#141615" />
+              <polygon points="178,62 180,30 182,62" fill="#1D4ED8" />
+              <circle cx="180" cy="62" r="6" fill="#FFFFFF" stroke="#1D4ED8" strokeWidth="2" />
+              <circle cx="180" cy="62" r="2.4" fill="#0E1116" />
             </g>
-            <text x="180" y="79" textAnchor="middle" fontFamily="JetBrains Mono, monospace" fontSize="7" letterSpacing="0.06em" fill="#5A605C">
+            <text x="180" y="79" textAnchor="middle" fontFamily="Hanken Grotesk, sans-serif" fontSize="7" fontWeight="600" letterSpacing="0.06em" fill="#64748B">
               {counterActive ? 'WYRÓWNANO' : 'SKALA LOG'}
             </text>
-            <text x="180" y="92" textAnchor="middle" fontFamily="Archivo, sans-serif" fontSize="11" fontWeight="800" fill="#141615">
+            <text x="180" y="92" textAnchor="middle" fontFamily="Bricolage Grotesque, sans-serif" fontSize="11.5" fontWeight="800" fill="#0E1116">
               {animatedRatioLabel}
             </text>
           </g>

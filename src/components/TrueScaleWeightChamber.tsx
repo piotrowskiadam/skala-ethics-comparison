@@ -123,7 +123,7 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       const heavierAreaX = lighterSide === 'left' ? rightAreaX : leftAreaX;
 
       const midX = axisGutter + halfW + centerDivider / 2;
-      ctx.strokeStyle = 'rgba(20, 22, 21, 0.22)';
+      ctx.strokeStyle = 'rgba(14, 17, 22, 0.14)';
       ctx.lineWidth = 1;
       ctx.setLineDash([3, 4]);
       ctx.beginPath();
@@ -132,14 +132,14 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      ctx.strokeStyle = 'rgba(20, 22, 21, 0.25)';
+      ctx.strokeStyle = 'rgba(14, 17, 22, 0.18)';
       ctx.beginPath();
       ctx.moveTo(axisGutter - 6, padTop);
       ctx.lineTo(axisGutter - 6, padTop + actualGridH);
       ctx.stroke();
 
-      ctx.font = '500 9px "JetBrains Mono", monospace';
-      ctx.fillStyle = '#5A605C';
+      ctx.font = '600 9.5px "Hanken Grotesk", sans-serif';
+      ctx.fillStyle = '#64748B';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
 
@@ -151,7 +151,7 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
         if (r === 0 || (r + 1) % tickEveryRows === 0 || isLast) {
           const yCenter = padTop + r * (bh + g) + bh / 2;
           const countAtRow = Math.min(totalSlots, (r + 1) * cols) * unitScale;
-          ctx.strokeStyle = '#141615';
+          ctx.strokeStyle = '#94A3B8';
           ctx.beginPath();
           ctx.moveTo(axisGutter - 10, yCenter);
           ctx.lineTo(axisGutter - 6, yCenter);
@@ -176,14 +176,8 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
         const x = startX + c * (bw + g);
         const y = padTop + r * (bh + g);
 
-        ctx.fillStyle = isFrac ? '#C97B57' : '#A44B27';
+        ctx.fillStyle = isFrac ? '#60A5FA' : '#1D4ED8';
         ctx.fillRect(x, y, w, bh);
-
-        if (bw >= 6) {
-          ctx.strokeStyle = '#141615';
-          ctx.lineWidth = 0.65;
-          ctx.strokeRect(x + 0.3, y + 0.3, Math.max(1, w - 0.6), Math.max(1, bh - 0.6));
-        }
       }
 
       const refW = Math.max(bw, 10);
@@ -191,14 +185,11 @@ export const TrueScaleWeightChamber: React.FC<TrueScaleWeightChamberProps> = ({
       const refX = heavierAreaX + (halfW - refW) / 2;
       const refY = padTop;
 
-      ctx.fillStyle = '#141615';
+      ctx.fillStyle = '#DC2626';
       ctx.fillRect(refX, refY, refW, refH);
-      ctx.strokeStyle = '#A44B27';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(refX - 2, refY - 2, refW + 4, refH + 4);
 
-      ctx.font = '700 10px "JetBrains Mono", monospace';
-      ctx.fillStyle = '#141615';
+      ctx.font = '700 10.5px "Hanken Grotesk", sans-serif';
+      ctx.fillStyle = '#0E1116';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText('1×', refX + refW / 2, refY + refH + 8);

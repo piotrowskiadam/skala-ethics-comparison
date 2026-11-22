@@ -336,34 +336,39 @@ export function App() {
       </header>
 
       <main id="top">
-        {/* ACT I: CLEAN, WELCOMING EDITORIAL LANDING HERO (ZERO TABELKOZA) */}
+        {/* ACT I: ASYMMETRIC EDITORIAL LANDING HERO (ZERO 3-CARD SLOP) */}
         <section className="landing-hero" aria-label="Wprowadzenie do instrumentu SKALA">
           <div className="landing-hero-inner">
-            <div className="landing-hero-copy">
+            <div className="landing-hero-left">
               <h1 className="landing-headline">
                 Ile naprawdę ważą Twoje codzienne decyzje?
               </h1>
               <p className="landing-subhead">
-                Jedna fizyczna skala zamiast greenwashingu. Zważ na żywo wpływ codziennych
-                wyborów na klimat, wodę, glebę i energię — każda liczba pochodzi ze
-                zweryfikowanych badań LCA.
+                Jedna fizyczna skala zamiast greenwashingu. Zważ codzienne wybory pod kątem
+                emisji CO₂e, wody, gleby i energii — każda liczba ma klikalne źródło naukowe.
               </p>
             </div>
 
-            <div className="hero-stories-grid" role="group" aria-label="Najciekawsze zestawienia na start">
+            <div
+              className="hero-stories-list"
+              role="group"
+              aria-label="Najciekawsze zestawienia na start"
+            >
               {HERO_STORIES.map((story) => {
                 const isSelected = activePreset?.id === story.presetId;
                 return (
                   <button
                     key={story.presetId}
                     type="button"
-                    className={`hero-story-card ${isSelected ? 'active' : ''}`}
+                    className={`hero-story-row ${isSelected ? 'active' : ''}`}
                     aria-pressed={isSelected}
                     onClick={() => handleSelectPreset(story.presetId, true)}
                   >
-                    <span className="hero-story-stat mono">{story.eyebrow}</span>
-                    <strong className="hero-story-title">{story.title}</strong>
-                    <span className="hero-story-sub">{story.sub}</span>
+                    <span className="hero-story-stat tabular">{story.eyebrow}</span>
+                    <span className="hero-story-meta">
+                      <strong className="hero-story-title">{story.title}</strong>
+                      <span className="hero-story-sub">{story.sub}</span>
+                    </span>
                   </button>
                 );
               })}

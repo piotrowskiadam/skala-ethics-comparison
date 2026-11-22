@@ -119,11 +119,11 @@ export const VeganCumulativeSection: React.FC<VeganCumulativeSectionProps> = ({
   const baseYAtDays = yOf(base.daily.co2 * days);
   const wedgePath = `M ${padL} ${padT + plotH} L ${activeX} ${activeY} L ${activeX} ${baseYAtDays} Z`;
 
-  const activeColor = isBaseline ? '#ECEAE3' : isSaving ? '#5BB381' : '#E07A4F';
+  const activeColor = isBaseline ? '#F8FAFC' : isSaving ? '#34D399' : '#F87171';
   const wedgeFill = isSaving
-    ? 'rgba(91, 179, 129, 0.25)'
+    ? 'rgba(52, 211, 153, 0.22)'
     : isWorse
-    ? 'rgba(224, 122, 79, 0.28)'
+    ? 'rgba(248, 113, 113, 0.24)'
     : 'transparent';
 
   const milestones = [

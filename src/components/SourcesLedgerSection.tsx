@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { SOURCES } from '../data/evidence';
 
 export const SourcesLedgerSection: React.FC = () => {
@@ -10,46 +10,43 @@ export const SourcesLedgerSection: React.FC = () => {
       <div className="section-header">
         <div>
           <h2 id="sources-heading" className="section-heading">
-            Baza badań naukowych i raportów LCA ({sourceList.length})
+            Źródła naukowe i raporty LCA
           </h2>
           <p className="section-lead">
-            Każda liczba w instrumencie SKALA opiera się na publicznych, recenzowanych
-            publikacjach naukowych lub oficjalnych rządowych współczynnikach konwersji
-            (Life Cycle Assessment). Poniżej znajdują się bezpośrednie linki do wszystkich
-            źródeł bazowych.
+            Wszystkie estymacje pochodzą z publicznych, recenzowanych publikacji i oficjalnych
+            współczynników konwersji. Kliknij dowolną pozycję, aby otworzyć materiał źródłowy.
           </p>
         </div>
       </div>
 
-      <div className="sources-grid">
-        {sourceList.map((src) => (
-          <article key={src.id} id={`source-${src.id}`} className="source-card">
-            <div>
-              <div className="source-card-top">
-                <span className="source-tag mono">{src.shortBadge}</span>
-                <span className="source-year">{src.year}</span>
+      {/* Unboxed 2-column Swiss academic index (replaces 12-card grid) */}
+      <ol className="sources-index">
+        {sourceList.map((src, idx) => (
+          <li key={src.id} id={`source-${src.id}`} className="source-row">
+            <span className="source-num tabular">
+              {String(idx + 1).padStart(2, '0')}
+            </span>
+            <div className="source-row-body">
+              <div className="source-row-head">
+                <a
+                  href={src.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-row-link"
+                  aria-label={`Otwórz źródło ${src.shortBadge} w nowej karcie`}
+                >
+                  <span>{src.shortBadge}</span>
+                  <ArrowUpRight size={14} strokeWidth={2} aria-hidden="true" />
+                </a>
+                <span className="source-row-inst">
+                  {src.institution} · {src.year}
+                </span>
               </div>
-              <p className="source-citation" style={{ marginTop: 10 }}>
-                {src.citation}
-              </p>
-              <p className="source-scope" style={{ marginTop: 6 }}>
-                {src.scope}
-              </p>
+              <p className="source-row-scope">{src.scope}</p>
             </div>
-
-            <a
-              href={src.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="source-ext-link"
-              aria-label={`Otwórz publikację ${src.shortBadge} (${src.institution}) w nowej karcie`}
-            >
-              <span>Otwórz publikację ({src.institution})</span>
-              <ExternalLink size={12} strokeWidth={2} aria-hidden="true" />
-            </a>
-          </article>
+          </li>
         ))}
-      </div>
+      </ol>
     </section>
   );
 };
