@@ -11,13 +11,14 @@ import {
 } from 'lucide-react';
 import {
   DECISIONS,
+  DIET_PROFILES,
   DUEL_PRESETS,
-  DietBaseline,
+  DietProfile,
+  EU_BASELINE_DIET,
   METRICS,
   METRIC_ORDER,
   MetricKey,
   SOURCES,
-  VEGAN_BASELINES,
   formatMetricValue,
   formatNumberPL,
   formatRatio,
@@ -80,8 +81,7 @@ export function App() {
   const [rightFreq, setRightFreq] = useState<number>(initial.rightFreq);
   const [isCounterbalanced, setIsCounterbalanced] = useState<boolean>(false);
   const [pickerSide, setPickerSide] = useState<'left' | 'right' | null>(null);
-  const [veganBaselineId, setVeganBaselineId] =
-    useState<DietBaseline['id']>('medium-meat');
+  const [selectedDietId, setSelectedDietId] = useState<DietProfile['id']>('vegan');
   const [veganDays, setVeganDays] = useState<number>(365);
   const [showMethodology, setShowMethodology] = useState<boolean>(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
@@ -204,12 +204,12 @@ export function App() {
     ratio,
   ]);
 
-  const veganBaseline =
-    VEGAN_BASELINES.find((b) => b.id === veganBaselineId) ?? VEGAN_BASELINES[0];
+  const veganDiet =
+    DIET_PROFILES.find((d) => d.id === 'vegan') ?? DIET_PROFILES[3];
 
-  const veganCo2 = veganBaseline.dailySaved.co2 * veganDays;
-  const veganWater = veganBaseline.dailySaved.water * veganDays;
-  const veganLand = veganBaseline.dailySaved.land * veganDays;
+  const veganCo2 = (EU_BASELINE_DIET.daily.co2 - veganDiet.daily.co2) * veganDays;
+  const veganWater = (EU_BASELINE_DIET.daily.water - veganDiet.daily.water) * veganDays;
+  const veganLand = (EU_BASELINE_DIET.daily.land - veganDiet.daily.land) * veganDays;
 
   const ledgerBarPct = Math.max(
     6,
@@ -555,11 +555,11 @@ export function App() {
           onAssignRight={handleSelectRight}
         />
 
-        {/* SECTION 3: DEEP-DIVE VEGAN DIET CUMULATIVE IMPACT (DARK GRAPHITE BAND) */}
+        {/* SECTION 3: DEEP-DIVE DIET CUMULATIVE IMPACT (DARK GRAPHITE BAND) */}
         <VeganCumulativeSection
-          baselineId={veganBaselineId}
+          selectedDietId={selectedDietId}
           days={veganDays}
-          onChangeBaseline={setVeganBaselineId}
+          onChangeDiet={setSelectedDietId}
           onChangeDays={setVeganDays}
         />
 

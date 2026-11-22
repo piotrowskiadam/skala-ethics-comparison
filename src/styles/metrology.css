@@ -1836,6 +1836,116 @@ input {
   background: rgba(224, 122, 79, 0.12);
 }
 
+.vegan-dark-band .baseline-option.active.is-saving {
+  border-color: #5bb381;
+  background: rgba(91, 179, 129, 0.13);
+}
+
+.vegan-dark-band .baseline-option.active.is-base {
+  border-color: #eceae3;
+  background: rgba(236, 234, 227, 0.08);
+}
+
+.diet-option-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.diet-delta-tag {
+  flex-shrink: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.diet-delta-tag.is-saving {
+  background: rgba(91, 179, 129, 0.18);
+  color: #74d39d;
+}
+
+.diet-delta-tag.is-worse {
+  background: rgba(224, 122, 79, 0.2);
+  color: #f0956e;
+}
+
+.diet-delta-tag.is-base {
+  background: rgba(236, 234, 227, 0.14);
+  color: #eceae3;
+}
+
+.diet-status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(236, 234, 227, 0.18);
+  background: #1b1e1c;
+}
+
+.diet-status-banner.is-saving {
+  border-color: rgba(91, 179, 129, 0.5);
+  color: #74d39d;
+}
+
+.diet-status-banner.is-worse {
+  border-color: rgba(224, 122, 79, 0.55);
+  color: #f0956e;
+}
+
+.diet-status-banner.is-neutral {
+  border-color: rgba(236, 234, 227, 0.35);
+  color: #eceae3;
+}
+
+.diet-status-total {
+  color: #c2c1ba;
+}
+
+.vegan-dark-band .slider-readout strong.is-saving {
+  color: #74d39d;
+}
+
+.vegan-dark-band .slider-readout strong.is-worse {
+  color: #f0956e;
+}
+
+.vegan-dark-band .slider-readout strong.is-neutral {
+  color: #eceae3;
+}
+
+.vegan-dark-band .range-slider.is-saving {
+  accent-color: #5bb381;
+}
+
+.vegan-dark-band .range-slider.is-worse {
+  accent-color: #e07a4f;
+}
+
+.vegan-dark-band .range-slider.is-neutral {
+  accent-color: #eceae3;
+}
+
+.vegan-dark-band .vegan-metric-big.is-saving span {
+  color: #74d39d;
+}
+
+.vegan-dark-band .vegan-metric-big.is-worse span {
+  color: #f0956e;
+}
+
+.vegan-dark-band .vegan-metric-big.is-neutral span {
+  color: #c2c1ba;
+}
+
 .vegan-dark-band .baseline-option-title {
   color: #f4f2ec;
 }

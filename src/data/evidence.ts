@@ -52,11 +52,19 @@ export interface DuelPreset {
   verifiedSourceId: string;
 }
 
-export interface DietBaseline {
-  id: 'high-meat' | 'medium-meat' | 'low-meat';
+export interface DietProfile {
+  id: 'high-meat' | 'eu-average' | 'vegetarian' | 'vegan';
   label: string;
+  shortLabel: string;
   subtitle: string;
-  dailySaved: Record<MetricKey, number>;
+  isBaseline?: boolean;
+  /** Daily absolute environmental footprint (standardised to 2 000 kcal/day, Scarborough et al. 2023 Nature Food) */
+  daily: {
+    co2: number; // kg CO₂e / day
+    water: number; // L freshwater / day
+    land: number; // m² / day
+    eutrophication: number; // g PO₄e / day
+  };
 }
 
 export const METRICS: Record<MetricKey, MetricMeta> = {
@@ -672,41 +680,60 @@ export const DUEL_PRESETS: DuelPreset[] = [
   },
 ];
 
-export const VEGAN_BASELINES: DietBaseline[] = [
-  {
-    id: 'medium-meat',
-    label: 'Średnia dieta mięsna',
-    subtitle: '50–99 g mięsa dziennie (typowy profil UE)',
-    dailySaved: {
-      co2: 4.1,
-      water: 1150,
-      land: 4.87,
-      energy: 3.4,
-    },
-  },
+export const DIET_PROFILES: DietProfile[] = [
   {
     id: 'high-meat',
-    label: 'Dieta wysokomięsna',
-    subtitle: 'powyżej 100 g mięsa dziennie',
-    dailySaved: {
-      co2: 7.77,
-      water: 1780,
-      land: 12.41,
-      energy: 6.3,
+    label: 'Dieta wysokomięsna (SAD)',
+    shortLabel: 'Wysokomięsna (SAD)',
+    subtitle: '≥100 g mięsa dziennie · profil typu zachodniego',
+    daily: {
+      co2: 10.24,
+      water: 890,
+      land: 16.78,
+      eutrophication: 40.8,
     },
   },
   {
-    id: 'low-meat',
-    label: 'Dieta niskomięsna',
-    subtitle: 'poniżej 50 g mięsa dziennie',
-    dailySaved: {
-      co2: 2.9,
-      water: 760,
-      land: 2.75,
-      energy: 2.2,
+    id: 'eu-average',
+    label: 'Średnia dieta europejska',
+    shortLabel: 'Średnia EU (baza)',
+    subtitle: '50–99 g mięsa dziennie · punkt odniesienia (0)',
+    isBaseline: true,
+    daily: {
+      co2: 6.57,
+      water: 770,
+      land: 9.92,
+      eutrophication: 28.5,
+    },
+  },
+  {
+    id: 'vegetarian',
+    label: 'Dieta wegetariańska',
+    shortLabel: 'Wegetariańska',
+    subtitle: 'bez mięsa, z nabiałem i jajami',
+    daily: {
+      co2: 4.16,
+      water: 530,
+      land: 6.01,
+      eutrophication: 17.27,
+    },
+  },
+  {
+    id: 'vegan',
+    label: 'Dieta wegańska',
+    shortLabel: 'Wegańska',
+    subtitle: '100% roślinna · najniższy ślad środowiskowy',
+    daily: {
+      co2: 2.47,
+      water: 410,
+      land: 4.37,
+      eutrophication: 10.7,
     },
   },
 ];
+
+export const EU_BASELINE_DIET =
+  DIET_PROFILES.find((d) => d.isBaseline) ?? DIET_PROFILES[1];
 
 export function getDecisionById(id: string): DecisionItem {
   return DECISIONS.find((d) => d.id === id) ?? DECISIONS[0];
